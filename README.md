@@ -17,33 +17,28 @@ A Node.js client library for interacting with the Orisun Event Store, providing 
 
 ## Installation
 
-### From npm
+### From GitHub
 
 ```bash
-npm install orisun-node-client
+npm install git+https://github.com/oexza/orisun-node-client.git
 ```
 
-### Local Development
-
-For local development, clone the repository and build the client:
+### From npm (Coming Soon)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/orisun-node-client.git
-cd orisun-node-client
-npm install
-npm run build
+npm install @orisun/eventstore-client
 ```
 
 Then import directly:
 
 ```typescript
-import { EventStoreClient } from 'orisun-node-client';
+import { EventStoreClient } from '@orisun/eventstore-client';
 ```
 
 ## Quick Start
 
 ```typescript
-import { EventStoreClient } from 'orisun-node-client';
+import { EventStoreClient } from '@orisun/eventstore-client';
 
 // Create a client
 const client = new EventStoreClient({
