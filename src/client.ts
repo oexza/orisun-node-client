@@ -275,7 +275,7 @@ export class EventStoreClient {
     // Circuit breaker functionality has been removed
 
     // Load the protobuf definition
-    const PROTO_PATH = path.join(__dirname, '../../../eventstore/eventstore.proto');
+    const PROTO_PATH = path.join(__dirname, '../eventstore.proto');
     const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
       keepCase: true,
       longs: String,
