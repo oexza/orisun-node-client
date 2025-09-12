@@ -57,28 +57,6 @@ export interface SubscribeRequest {
     stream?: string;
     afterVersion?: number;
 }
-export interface RetryPolicy {
-    /**
-     * Maximum number of retry attempts
-     */
-    maxAttempts?: number;
-    /**
-     * Initial backoff time (e.g., '0.1s', '1s')
-     */
-    initialBackoff?: string;
-    /**
-     * Maximum backoff time (e.g., '10s', '60s')
-     */
-    maxBackoff?: string;
-    /**
-     * Backoff multiplier for exponential backoff
-     */
-    backoffMultiplier?: number;
-    /**
-     * Status codes that should trigger a retry
-     */
-    retryableStatusCodes?: string[];
-}
 /**
  * Logger interface for client logging
  */
@@ -136,14 +114,6 @@ export interface EventStoreClientOptions {
      * - pick_first: Connects to the first available server
      */
     loadBalancingPolicy?: 'round_robin' | 'pick_first';
-    /**
-     * Enable retries for failed requests
-     */
-    enableRetries?: boolean;
-    /**
-     * Retry policy configuration for failed requests
-     */
-    retryPolicy?: RetryPolicy;
     /**
      * Custom logger implementation
      */

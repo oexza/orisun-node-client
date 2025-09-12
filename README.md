@@ -12,7 +12,7 @@ A Node.js client library for interacting with the Orisun Event Store, providing 
 - **gRPC Communication**: High-performance gRPC protocol
 - **Authentication**: Built-in support for basic authentication
 - **Load Balancing**: Support for multiple hosts and DNS-based load balancing
-- **Resilience**: Configurable retry policies for handling transient failures
+- **Resilience**: Built-in connection management and error handling
 - **Logging**: Configurable logging for debugging and monitoring
 
 ## Installation
@@ -82,15 +82,7 @@ const client = new EventStoreClient({
   // Load balancing configuration
   loadBalancingPolicy: 'round_robin', // or 'pick_first'
   
-  // Retry configuration for resilience
-  enableRetries: true, // Enable automatic retries for failed requests
-  retryPolicy: {
-    maxAttempts: 5, // Maximum number of retry attempts
-    initialBackoff: '0.1s', // Initial backoff time
-    maxBackoff: '10s', // Maximum backoff time
-    backoffMultiplier: 2, // Backoff multiplier for exponential backoff
-    retryableStatusCodes: ['UNAVAILABLE'] // Status codes that trigger retries
-  },
+
   
   // Logging configuration
   enableLogging: true, // Enable or disable logging
@@ -145,13 +137,7 @@ new EventStoreClient(options?: EventStoreClientOptions)
 - `username` (string): Authentication username (default: 'admin')
 - `password` (string): Authentication password (default: 'changeit')
 - `loadBalancingPolicy` (string): Load balancing strategy - 'round_robin' or 'pick_first' (default: 'round_robin')
-- `enableRetries` (boolean): Enable automatic retries for failed requests (default: true)
-- `retryPolicy` (object): Configuration for retry behavior
-  - `maxAttempts` (number): Maximum number of retry attempts (default: 5)
-  - `initialBackoff` (string): Initial backoff time (default: '0.1s')
-  - `maxBackoff` (string): Maximum backoff time (default: '10s')
-  - `backoffMultiplier` (number): Backoff multiplier for exponential backoff (default: 2)
-  - `retryableStatusCodes` (string[]): Status codes that trigger retries (default: ['UNAVAILABLE'])
+
 - `enableLogging` (boolean): Enable or disable logging (default: true)
 - `logger` (object): Custom logger implementation (default: console)
   - Must implement `debug`, `info`, `warn`, and `error` methods
@@ -411,7 +397,7 @@ class EventProcessor {
 
   private handleError(error: Error) {
     console.error('Event processing error:', error);
-    // Implement retry logic or error handling
+    // Implement error handling
   }
 
   private async sendWelcomeEmail(userData: any) {

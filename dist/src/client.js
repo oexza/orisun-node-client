@@ -59,15 +59,6 @@ function validateClientOptions(options) {
     if (options.keepaliveTimeoutMs && options.keepaliveTimeoutMs < 0) {
         throw new Error('keepaliveTimeoutMs must be a positive number');
     }
-    // Validate retry policy
-    if (options.retryPolicy) {
-        if (options.retryPolicy.maxAttempts && options.retryPolicy.maxAttempts < 1) {
-            throw new Error('retryPolicy.maxAttempts must be at least 1');
-        }
-        if (options.retryPolicy.backoffMultiplier && options.retryPolicy.backoffMultiplier <= 0) {
-            throw new Error('retryPolicy.backoffMultiplier must be greater than 0');
-        }
-    }
     // Validate load balancing policy
     if (options.loadBalancingPolicy &&
         !['round_robin', 'pick_first'].includes(options.loadBalancingPolicy)) {
@@ -94,13 +85,7 @@ class EventStoreClient {
         const { host = 'localhost', port = 5005, target, credentials = grpc.credentials.createInsecure(), username = 'admin', password = 'changeit', keepaliveTimeMs = 30000, // 30 seconds by default
         keepaliveTimeoutMs = 10000, // 10 seconds by default
         keepalivePermitWithoutCalls = true, // Allow pings when there are no calls
-        loadBalancingPolicy = 'round_robin', enableRetries = true, retryPolicy = {
-            maxAttempts: 5,
-            initialBackoff: '0.1s',
-            maxBackoff: '10s',
-            backoffMultiplier: 1.5,
-            retryableStatusCodes: ['UNAVAILABLE', 'UNKNOWN']
-        }, logger, enableLogging = false } = options;
+        loadBalancingPolicy = 'round_robin', logger, enableLogging = false } = options;
         // Initialize logger
         this.logger = enableLogging ? (logger || console) : new NoopLogger();
         // Rate limiting functionality has been removed
@@ -123,19 +108,8 @@ class EventStoreClient {
             'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
             'grpc.http2.max_pings_without_data': 0,
             'grpc.lb_policy_name': loadBalancingPolicy,
-            'grpc.enable_retries': enableRetries ? 1 : 0,
             'grpc.service_config': JSON.stringify({
-                loadBalancingConfig: [{ [loadBalancingPolicy]: {} }],
-                methodConfig: [{
-                        name: [{ service: 'eventstore.EventStore' }],
-                        retryPolicy: {
-                            maxAttempts: retryPolicy.maxAttempts,
-                            initialBackoff: retryPolicy.initialBackoff,
-                            maxBackoff: retryPolicy.maxBackoff,
-                            backoffMultiplier: retryPolicy.backoffMultiplier,
-                            retryableStatusCodes: retryPolicy.retryableStatusCodes
-                        }
-                    }]
+                loadBalancingConfig: [{ [loadBalancingPolicy]: {} }]
             })
         };
         // Determine the target string

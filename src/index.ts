@@ -9,7 +9,6 @@ export {
   Tag,
   Criterion,
   Query,
-  RetryPolicy,
   EventStoreClientOptions,
   Logger
 } from './client';

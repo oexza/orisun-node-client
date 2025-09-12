@@ -20,15 +20,7 @@ async function basicUsageExample() {
     // Load balancing policy
     loadBalancingPolicy: 'round_robin', // or 'pick_first'
     
-    // Retry configuration
-    enableRetries: true, // Enable automatic retries for failed requests
-    retryPolicy: {
-      maxAttempts: 5, // Maximum number of retry attempts
-      initialBackoff: '0.1s', // Initial backoff time
-      maxBackoff: '10s', // Maximum backoff time
-      backoffMultiplier: 2, // Backoff multiplier for exponential backoff
-      retryableStatusCodes: ['UNAVAILABLE'] // Status codes that trigger retries
-    },
+
     
     // Logging configuration
     enableLogging: true, // Enable logging (set to false in production if you want to minimize output)

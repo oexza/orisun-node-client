@@ -142,36 +142,9 @@ describe('EventStoreClient', () => {
       clientWithTarget.close();
     });
     
-    it('should create client with custom retry policy', () => {
-      const clientWithRetryPolicy = new EventStoreClient({
-        host: 'localhost',
-        port: 5005,
-        username: 'test',
-        password: 'test',
-        enableRetries: true,
-        retryPolicy: {
-          maxAttempts: 10,
-          initialBackoff: '0.5s',
-          maxBackoff: '30s',
-          backoffMultiplier: 1.5,
-          retryableStatusCodes: ['UNAVAILABLE', 'RESOURCE_EXHAUSTED']
-        }
-      });
-      expect(clientWithRetryPolicy).toBeInstanceOf(EventStoreClient);
-      clientWithRetryPolicy.close();
-    });
+
     
-    it('should create client with retries disabled', () => {
-      const clientWithoutRetries = new EventStoreClient({
-        host: 'localhost',
-        port: 5005,
-        username: 'test',
-        password: 'test',
-        enableRetries: false
-      });
-      expect(clientWithoutRetries).toBeInstanceOf(EventStoreClient);
-      clientWithoutRetries.close();
-    });
+
   });
 
   describe('saveEvents', () => {
