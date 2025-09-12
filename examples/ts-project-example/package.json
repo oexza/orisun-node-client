@@ -1,0 +1,23 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@orisun/eventstore-client": "github:oexza/orisun-node-client"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0"
+  },
+  "name": "examples",
+  "version": "1.0.0",
+  "description": "Examples for Orisun Event Store client",
+  "main": "test-client-import.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node --esm test-client-import.ts",
+    "test": "npm run start"
+  },
+  "keywords": ["orisun", "eventstore", "examples"],
+  "author": "",
+  "license": "ISC"
+}
