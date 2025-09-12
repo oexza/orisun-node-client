@@ -29,10 +29,30 @@ npm install git+https://github.com/oexza/orisun-node-client.git
 npm install @orisun/eventstore-client
 ```
 
-Then import directly:
+## Importing the Client
+
+### TypeScript / ES6 Modules
 
 ```typescript
 import { EventStoreClient } from '@orisun/eventstore-client';
+
+// Or import specific types
+import { EventStoreClient, Event, EventToSave } from '@orisun/eventstore-client';
+```
+
+### CommonJS / Node.js
+
+```javascript
+const { EventStoreClient } = require('@orisun/eventstore-client');
+
+// Or using destructuring for multiple imports
+const { EventStoreClient, Event, EventToSave } = require('@orisun/eventstore-client');
+```
+
+### Default Import (Alternative)
+
+```typescript
+import EventStoreClient from '@orisun/eventstore-client';
 ```
 
 ## Quick Start
