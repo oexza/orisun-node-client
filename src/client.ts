@@ -162,6 +162,7 @@ export interface EventStoreClientOptions {
    * Enable or disable logging
    */
   enableLogging?: boolean;
+
 }
 
 /**
@@ -303,6 +304,28 @@ export class EventStoreClient {
     if (options.enableLogging) {
       this.logger.info('EventStoreClient initialized');
     }
+
+    // Perform mandatory health check immediately after connection
+    // Use setImmediate to perform health check after constructor completes
+    setImmediate(async () => {
+      // Skip health check if client has been disposed
+      if (this.disposed) {
+        return;
+      }
+      
+      try {
+        const isHealthy = await this.healthCheck();
+        if (!isHealthy) {
+          const error = new Error('EventStore connection health check failed');
+          this.logger.error('Initial health check failed:', error);
+          throw error;
+        }
+        this.logger.info('Initial health check passed - connection established');
+      } catch (error) {
+        this.logger.error('Initial health check error:', error);
+        throw error;
+      }
+    });
   }
 
   /**
@@ -580,8 +603,6 @@ export class EventStoreClient {
     const streamInfo = request.stream ? `stream '${request.stream}'` : 'all streams';
     this.logger.debug(`Subscribing to ${streamInfo} with subscriber '${request.subscriberName}'`);
 
-    // No circuit breaker or rate limiting check needed
-
     let stream: grpc.ClientReadableStream<any>;
 
     try {
@@ -751,7 +772,7 @@ export class EventStoreClient {
     try {
       // Try to make a simple call to test connectivity
       await this.getEvents({
-        boundary: 'orisun_test_2',
+        boundary: 'orisun_admin',
         stream: { name: 'health-check' }
       });
 
