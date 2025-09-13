@@ -7,9 +7,6 @@ export {
   SubscribeRequest,
   WriteResult,
   Position,
-  Tag,
-  Criterion,
-  Query,
   EventStoreClientOptions,
   Logger
 } from './client';

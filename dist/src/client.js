@@ -38,6 +38,7 @@ const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
 const util_1 = require("util");
 const path = __importStar(require("path"));
+const pb = __importStar(require("./generated/eventstore_pb"));
 /**
  * Validates client options and throws errors for invalid configurations
  */
@@ -141,12 +142,30 @@ class EventStoreClient {
             this.logger.info('EventStoreClient initialized');
         }
     }
-    /**
-     * Save events to a stream
-     * @throws {Error} If the request is invalid or the operation fails
-     * @returns {Promise<WriteResult>} The write result containing the log position
-     */
-    async saveEvents(request) {
+    async saveEvents(requestOrStreamName, events, expectedVersion) {
+        // Handle overloaded method signatures
+        let request;
+        if (typeof requestOrStreamName === 'string') {
+            if (!events || !Array.isArray(events)) {
+                throw new Error('Events array is required when using streamName parameter');
+            }
+            request = {
+                boundary: 'default',
+                stream: {
+                    name: requestOrStreamName,
+                    expectedVersion: expectedVersion ?? -1
+                },
+                events: events.map(event => ({
+                    eventId: event.eventId,
+                    eventType: event.eventType,
+                    data: event.data,
+                    metadata: event.metadata
+                }))
+            };
+        }
+        else {
+            request = requestOrStreamName;
+        }
         // Check if client is disposed
         if (this.disposed) {
             throw new Error('Client has been disposed');
@@ -177,30 +196,36 @@ class EventStoreClient {
         });
         this.logger.debug(`Saving ${request.events.length} events to stream '${request.stream.name}'`);
         const saveEventsAsync = (0, util_1.promisify)(this.client.saveEvents.bind(this.client));
-        const grpcRequest = {
-            boundary: request.boundary,
-            stream: {
-                name: request.stream.name,
-                expected_version: request.stream.expectedVersion,
-                subsetQuery: request.stream.subsetQuery
-            },
-            events: request.events.map(event => ({
-                event_id: event.eventId,
-                event_type: event.eventType,
-                data: JSON.stringify(event.data),
-                metadata: JSON.stringify(event.metadata || {})
-            }))
-        };
+        const grpcRequest = new pb.SaveEventsRequest();
+        grpcRequest.setBoundary(request.boundary);
+        const streamRequest = new pb.SaveStreamQuery();
+        streamRequest.setName(request.stream.name);
+        streamRequest.setExpectedVersion(request.stream.expectedVersion);
+        if (request.stream.subsetQuery) {
+            const query = new pb.Query();
+            // Set query criteria if needed
+            streamRequest.setSubsetquery(query);
+        }
+        grpcRequest.setStream(streamRequest);
+        const eventsList = request.events.map(event => {
+            const eventToSave = new pb.EventToSave();
+            eventToSave.setEventId(event.eventId);
+            eventToSave.setEventType(event.eventType);
+            eventToSave.setData(JSON.stringify(event.data));
+            eventToSave.setMetadata(JSON.stringify(event.metadata || {}));
+            return eventToSave;
+        });
+        grpcRequest.setEventsList(eventsList);
         try {
             const response = await saveEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
             this.logger.debug(`Successfully saved events to stream '${request.stream.name}'`);
             // Transform the gRPC response to match our interface
             return {
                 logPosition: {
-                    commitPosition: response.log_position?.commit_position || 0,
-                    preparePosition: response.log_position?.prepare_position || 0
+                    commitPosition: response.logPosition?.commitPosition || 0,
+                    preparePosition: response.logPosition?.preparePosition || 0
                 },
-                newStreamVersion: response.new_stream_version || 0
+                newStreamVersion: response.newStreamVersion || 0
             };
         }
         catch (error) {
@@ -240,48 +265,64 @@ class EventStoreClient {
         const streamInfo = request.stream ? `stream '${request.stream.name}'` : 'all streams';
         this.logger.debug(`Getting events from ${streamInfo}`);
         const getEventsAsync = (0, util_1.promisify)(this.client.getEvents.bind(this.client));
-        const grpcRequest = {
-            query: request.query,
-            from_position: request.fromPosition,
-            count: request.count || 100,
-            direction: request.direction === 'DESC' ? 1 : 0,
-            boundary: request.boundary,
-            stream: request.stream ? {
-                name: request.stream.name,
-                from_version: request.stream.fromVersion || 0
-            } : undefined
-        };
+        const grpcRequest = new pb.GetEventsRequest();
+        grpcRequest.setBoundary(request.boundary);
+        grpcRequest.setCount(request.count || 100);
+        grpcRequest.setDirection(request.direction === 'DESC' ? pb.Direction.DESC : pb.Direction.ASC);
+        if (request.query) {
+            const query = new pb.Query();
+            // Set query criteria if needed
+            grpcRequest.setQuery(query);
+        }
+        if (request.fromPosition) {
+            const position = new pb.Position();
+            position.setCommitPosition(request.fromPosition.commitPosition);
+            position.setPreparePosition(request.fromPosition.preparePosition);
+            grpcRequest.setFromPosition(position);
+        }
+        if (request.stream) {
+            const streamRequest = new pb.GetStreamQuery();
+            streamRequest.setName(request.stream.name);
+            streamRequest.setFromVersion(request.stream.fromVersion || 0);
+            grpcRequest.setStream(streamRequest);
+        }
         try {
             const response = await getEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
-            if (!response || !response.events) {
+            if (!response || !response.events || response.events.length === 0) {
                 this.logger.warn(`No events returned from ${streamInfo}`);
                 return [];
             }
             const events = response.events.map((event) => {
                 try {
                     return {
-                        eventId: event.event_id,
-                        eventType: event.event_type,
+                        eventId: event.eventId,
+                        eventType: event.eventType,
                         data: JSON.parse(event.data),
                         metadata: JSON.parse(event.metadata || '{}'),
-                        streamId: event.stream_id,
+                        streamId: event.streamId,
                         version: event.version,
-                        position: event.position,
-                        dateCreated: event.date_created
+                        position: {
+                            commitPosition: event.position?.commitPosition || 0,
+                            preparePosition: event.position?.preparePosition || 0
+                        },
+                        dateCreated: event.dateCreated
                     };
                 }
                 catch (parseError) {
                     this.logger.error(`Failed to parse event data or metadata: ${parseError.message}`);
                     // Return event with unparsed data to avoid losing the event
                     return {
-                        eventId: event.event_id,
-                        eventType: event.event_type,
+                        eventId: event.eventId,
+                        eventType: event.eventType,
                         data: event.data, // Raw string
                         metadata: event.metadata || '{}', // Raw string
-                        streamId: event.stream_id,
+                        streamId: event.streamId,
                         version: event.version,
-                        position: event.position,
-                        dateCreated: event.date_created
+                        position: {
+                            commitPosition: event.position?.commitPosition || 0,
+                            preparePosition: event.position?.preparePosition || 0
+                        },
+                        dateCreated: event.dateCreated
                     };
                 }
             });
@@ -327,23 +368,34 @@ class EventStoreClient {
         try {
             if (request.stream) {
                 // Subscribe to a specific stream
-                const grpcRequest = {
-                    query: request.query,
-                    subscriber_name: request.subscriberName,
-                    boundary: request.boundary,
-                    stream: request.stream,
-                    after_version: request.afterVersion || 0
-                };
+                const grpcRequest = new pb.CatchUpSubscribeToStreamRequest();
+                grpcRequest.setSubscriberName(request.subscriberName);
+                grpcRequest.setBoundary(request.boundary);
+                grpcRequest.setStream(request.stream);
+                grpcRequest.setAfterversion(request.afterVersion || 0);
+                if (request.query) {
+                    const query = new pb.Query();
+                    // Set query criteria if needed
+                    grpcRequest.setQuery(query);
+                }
                 stream = this.client.catchUpSubscribeToStream(grpcRequest, this.credentials || new grpc.Metadata());
             }
             else {
                 // Subscribe to all events
-                const grpcRequest = {
-                    afterPosition: request.afterPosition,
-                    query: request.query,
-                    subscriber_name: request.subscriberName,
-                    boundary: request.boundary
-                };
+                const grpcRequest = new pb.CatchUpSubscribeToEventStoreRequest();
+                grpcRequest.setSubscriberName(request.subscriberName);
+                grpcRequest.setBoundary(request.boundary);
+                if (request.afterPosition) {
+                    const position = new pb.Position();
+                    position.setCommitPosition(request.afterPosition.commitPosition);
+                    position.setPreparePosition(request.afterPosition.preparePosition);
+                    grpcRequest.setAfterposition(position);
+                }
+                if (request.query) {
+                    const query = new pb.Query();
+                    // Set query criteria if needed
+                    grpcRequest.setQuery(query);
+                }
                 stream = this.client.catchUpSubscribeToEvents(grpcRequest, this.credentials || new grpc.Metadata());
             }
         }
@@ -363,14 +415,17 @@ class EventStoreClient {
         stream.on('data', (event) => {
             try {
                 const parsedEvent = {
-                    eventId: event.event_id,
-                    eventType: event.event_type,
+                    eventId: event.eventId,
+                    eventType: event.eventType,
                     data: JSON.parse(event.data),
                     metadata: JSON.parse(event.metadata || '{}'),
-                    streamId: event.stream_id,
+                    streamId: event.streamId,
                     version: event.version,
-                    position: event.position,
-                    dateCreated: event.date_created
+                    position: {
+                        commitPosition: event.position?.commitPosition || 0,
+                        preparePosition: event.position?.preparePosition || 0
+                    },
+                    dateCreated: event.dateCreated
                 };
                 onEvent(parsedEvent);
             }
@@ -380,8 +435,8 @@ class EventStoreClient {
                 const enhancedError = new Error(`Failed to parse event: ${parseError.message}`);
                 enhancedError.stack = parseError.stack;
                 enhancedError.originalError = parseError;
-                enhancedError.eventId = event.event_id;
-                enhancedError.eventType = event.event_type;
+                enhancedError.eventId = event.eventId;
+                enhancedError.eventType = event.eventType;
                 if (onError) {
                     onError(enhancedError);
                 }

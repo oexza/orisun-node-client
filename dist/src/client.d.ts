@@ -1,4 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
+import * as pb from './generated/eventstore_pb';
 export interface Event {
     eventId: string;
     eventType: string;
@@ -19,27 +20,17 @@ export interface Position {
     commitPosition: number;
     preparePosition: number;
 }
-export interface Tag {
-    key: string;
-    value: string;
-}
-export interface Criterion {
-    tags: Tag[];
-}
-export interface Query {
-    criteria: Criterion[];
-}
 export interface SaveEventsRequest {
     boundary: string;
     stream: {
         name: string;
         expectedVersion: number;
-        subsetQuery?: Query;
+        subsetQuery?: any;
     };
     events: EventToSave[];
 }
 export interface GetEventsRequest {
-    query?: Query;
+    query?: any;
     fromPosition?: Position;
     count?: number;
     direction?: 'ASC' | 'DESC';
@@ -51,7 +42,7 @@ export interface GetEventsRequest {
 }
 export interface SubscribeRequest {
     afterPosition?: Position;
-    query?: Query;
+    query?: any;
     subscriberName: string;
     boundary: string;
     stream?: string;
@@ -61,6 +52,16 @@ export interface WriteResult {
     logPosition: Position;
     newStreamVersion: number;
 }
+export type PbEvent = pb.Event;
+export type PbEventToSave = pb.EventToSave;
+export type PbPosition = pb.Position;
+export type PbSaveEventsRequest = pb.SaveEventsRequest;
+export type PbGetEventsRequest = pb.GetEventsRequest;
+export type PbWriteResult = pb.WriteResult;
+export type PbSaveStreamQuery = pb.SaveStreamQuery;
+export type PbCatchUpSubscribeToStreamRequest = pb.CatchUpSubscribeToStreamRequest;
+export type PbCatchUpSubscribeToEventStoreRequest = pb.CatchUpSubscribeToEventStoreRequest;
+export type PbGetEventsResponse = pb.GetEventsResponse;
 /**
  * Logger interface for client logging
  */
@@ -143,6 +144,7 @@ export declare class EventStoreClient {
      * @returns {Promise<WriteResult>} The write result containing the log position
      */
     saveEvents(request: SaveEventsRequest): Promise<WriteResult>;
+    saveEvents(streamName: string, events: Event[], expectedVersion?: number): Promise<WriteResult>;
     /**
      * Get events from a stream
      * @throws {Error} If the request is invalid or the operation fails

@@ -9,7 +9,7 @@
     "dev": "ts-node src/index.ts",
     "test": "jest",
     "example": "ts-node examples/basic-usage.ts",
-    "generate-proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/generated --grpc_out=grpc_js:./src/generated --ts_out=grpc_js:./src/generated -I ../../eventstore ../../eventstore/eventstore.proto"
+    "generate-proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/generated --grpc_out=generate_package_definition:./src/generated --ts_out=generate_package_definition:./src/generated -I ../../eventstore ../../eventstore/eventstore.proto"
   },
   "keywords": [
     "eventstore",
