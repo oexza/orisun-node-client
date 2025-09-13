@@ -38,11 +38,11 @@ jest.mock('@grpc/proto-loader', () => ({
 beforeEach(() => {
   mockSaveEvents.mockImplementation((request, metadata, callback) => {
     callback(null, {
-      logPosition: {
-        commitPosition: 123,
-        preparePosition: 123
+      log_position: {
+        commit_position: '123',
+        prepare_position: '123'
       },
-      newStreamVersion: 123
+      new_stream_version: '123'
     });
   });
   
@@ -50,14 +50,14 @@ beforeEach(() => {
     callback(null, {
       events: [
         {
-          eventId: 'test-event-1',
-          eventType: 'TestEvent',
+          event_id: 'test-event-1',
+          event_type: 'TestEvent',
           data: JSON.stringify({ test: 'data' }),
           metadata: JSON.stringify({ source: 'test' }),
-          streamId: 'test-stream',
-          version: 1,
-          position: { commitPosition: 1, preparePosition: 1 },
-          dateCreated: '2024-01-01T00:00:00Z'
+          stream_id: 'test-stream',
+          version: '1',
+          position: { commit_position: '1', prepare_position: '1' },
+          date_created: { seconds: '1704067200', nanos: 0 }
         }
       ]
     });
@@ -198,8 +198,11 @@ describe('EventStoreClient', () => {
         metadata: { source: 'test' },
         streamId: 'test-stream',
         version: 1,
-        position: { commitPosition: 1, preparePosition: 1 },
-        dateCreated: '2024-01-01T00:00:00Z'
+        position: {
+          commitPosition: 1,
+          preparePosition: 1
+        },
+        dateCreated: '2024-01-01T00:00:00.000Z'
       });
     });
 
