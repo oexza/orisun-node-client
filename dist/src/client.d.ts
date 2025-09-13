@@ -20,17 +20,27 @@ export interface Position {
     commitPosition: number;
     preparePosition: number;
 }
+export interface Tag {
+    key: string;
+    value: string;
+}
+export interface Criterion {
+    tags: Tag[];
+}
+export interface Query {
+    criteria: Criterion[];
+}
 export interface SaveEventsRequest {
     boundary: string;
     stream: {
         name: string;
         expectedVersion: number;
-        subsetQuery?: any;
+        subsetQuery?: Query;
     };
     events: EventToSave[];
 }
 export interface GetEventsRequest {
-    query?: any;
+    query?: Query;
     fromPosition?: Position;
     count?: number;
     direction?: 'ASC' | 'DESC';
@@ -42,7 +52,7 @@ export interface GetEventsRequest {
 }
 export interface SubscribeRequest {
     afterPosition?: Position;
-    query?: any;
+    query?: Query;
     subscriberName: string;
     boundary: string;
     stream?: string;
@@ -129,7 +139,7 @@ export interface EventStoreClientOptions {
     enableLogging?: boolean;
 }
 /**
- * Rate limiter implementation for client operations
+ * orisun client operations
  */
 export declare class EventStoreClient {
     private client;
