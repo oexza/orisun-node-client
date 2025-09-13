@@ -1,4 +1,4 @@
-import { EventStoreClient, Event } from '../src';
+import { EventStoreClient, Event, WriteResult } from '../src';
 
 async function basicUsageExample() {
   // Create a client instance with keep-alive options and load balancing
@@ -45,10 +45,10 @@ async function basicUsageExample() {
     }
     console.log('Connected successfully!');
 
-    // Define some sample events
+    // Define some sample events with proper UUIDs
     const events = [
       {
-        eventId: 'event-1',
+        eventId: crypto.randomUUID(),
         eventType: 'UserCreated',
         data: {
           userId: 'user-123',
@@ -61,7 +61,7 @@ async function basicUsageExample() {
         }
       },
       {
-        eventId: 'event-2',
+        eventId: crypto.randomUUID(),
         eventType: 'UserEmailUpdated',
         data: {
           userId: 'user-123',
@@ -75,24 +75,27 @@ async function basicUsageExample() {
       }
     ];
 
-    // Save events to a stream
-    console.log('Saving events to stream...');
-    await client.saveEvents({
-      boundary: 'tenant-1',
+    // Save events to a stream with unique name
+    const streamName = `user-${Date.now()}`;
+    console.log(`Saving events to stream: ${streamName}...`);
+    const writeResult: WriteResult = await client.saveEvents({
+      boundary: 'orisun_test_2',
       stream: {
-        name: 'user-123',
-        expectedVersion: 0 // Expecting stream to be new
+        name: streamName,
+        expectedVersion: -1 // Expecting stream to be new
       },
       events: events
     });
     console.log('Events saved successfully!');
+    console.log('Log position:', writeResult.logPosition);
+    console.log('New stream version:', writeResult.newStreamVersion);
 
     // Read events from the stream
-    console.log('Reading events from stream...');
+    console.log(`Reading events from stream: ${streamName}...`);
     const retrievedEvents = await client.getEvents({
-      boundary: 'tenant-1',
+      boundary: 'orisun_test_2',
       stream: {
-        name: 'user-123'
+        name: streamName
       }
     });
     
@@ -108,12 +111,12 @@ async function basicUsageExample() {
     });
 
     // Subscribe to events (this will run indefinitely)
-    console.log('\nSubscribing to events...');
+    console.log(`\nSubscribing to events from stream '${streamName}'...`);
     const subscription = client.subscribeToEvents(
       {
-        stream: 'user-123',
+        stream: streamName,
         subscriberName: 'example-subscriber',
-        boundary: 'tenant-1'
+        boundary: 'orisun_test_2'
       },
       (event: Event) => {
         console.log('Received event:', {

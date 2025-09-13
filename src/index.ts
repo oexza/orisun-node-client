@@ -5,6 +5,7 @@ export {
   SaveEventsRequest,
   GetEventsRequest,
   SubscribeRequest,
+  WriteResult,
   Position,
   Tag,
   Criterion,

@@ -1,4 +1,4 @@
-import { EventStoreClient, EventToSave } from '../src';
+import { EventStoreClient, EventToSave, WriteResult } from '../src';
 
 /**
  * Integration example showing how to use the Node.js client
@@ -109,7 +109,7 @@ async function integrationExample() {
 
     // Save events to the stream
     console.log(`📝 Saving ${orderEvents.length} events to stream: ${streamName}`);
-    await client.saveEvents({
+    const writeResult: WriteResult = await client.saveEvents({
       boundary,
       stream: {
         name: streamName,
@@ -118,6 +118,7 @@ async function integrationExample() {
       events: orderEvents
     });
     console.log('✅ Events saved successfully!');
+    console.log('📍 Log position:', writeResult.logPosition);
 
     // Read events back from the stream
     console.log('📖 Reading events from stream...');
@@ -163,7 +164,7 @@ async function integrationExample() {
     // Add one more event to trigger the subscription
     setTimeout(async () => {
       console.log('\n📝 Adding one more event to trigger subscription...');
-      await client.saveEvents({
+      const additionalWriteResult: WriteResult = await client.saveEvents({
         boundary,
         stream: {
           name: streamName,
@@ -183,6 +184,7 @@ async function integrationExample() {
           }
         }]
       });
+      console.log('📍 Additional event log position:', additionalWriteResult.logPosition);
     }, 2000);
 
     // Let the subscription run for a few seconds

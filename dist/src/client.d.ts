@@ -57,6 +57,10 @@ export interface SubscribeRequest {
     stream?: string;
     afterVersion?: number;
 }
+export interface WriteResult {
+    logPosition: Position;
+    newStreamVersion: number;
+}
 /**
  * Logger interface for client logging
  */
@@ -136,8 +140,9 @@ export declare class EventStoreClient {
     /**
      * Save events to a stream
      * @throws {Error} If the request is invalid or the operation fails
+     * @returns {Promise<WriteResult>} The write result containing the log position
      */
-    saveEvents(request: SaveEventsRequest): Promise<void>;
+    saveEvents(request: SaveEventsRequest): Promise<WriteResult>;
     /**
      * Get events from a stream
      * @throws {Error} If the request is invalid or the operation fails

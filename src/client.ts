@@ -71,6 +71,11 @@ export interface SubscribeRequest {
   afterVersion?: number;
 }
 
+export interface WriteResult {
+  logPosition: Position;
+  newStreamVersion: number;
+}
+
 
 
 
@@ -224,13 +229,9 @@ export class EventStoreClient {
     
     // Initialize logger
     this.logger = enableLogging ? (logger || console) : new NoopLogger();
-    
-    // Rate limiting functionality has been removed
-    
-    // Circuit breaker functionality has been removed
 
     // Load the protobuf definition
-    const PROTO_PATH = path.join(__dirname, 'eventstore.proto');
+    const PROTO_PATH = path.join(__dirname, '../eventstore.proto');
     const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
       keepCase: true,
       longs: String,
@@ -296,8 +297,9 @@ export class EventStoreClient {
   /**
    * Save events to a stream
    * @throws {Error} If the request is invalid or the operation fails
+   * @returns {Promise<WriteResult>} The write result containing the log position
    */
-  async saveEvents(request: SaveEventsRequest): Promise<void> {
+  async saveEvents(request: SaveEventsRequest): Promise<WriteResult> {
     // Check if client is disposed
     if (this.disposed) {
       throw new Error('Client has been disposed');
@@ -352,8 +354,17 @@ export class EventStoreClient {
     };
 
     try {
-      await saveEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
+      const response = await saveEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
       this.logger.debug(`Successfully saved events to stream '${request.stream.name}'`);
+      
+      // Transform the gRPC response to match our interface
+      return {
+        logPosition: {
+          commitPosition: response.log_position?.commit_position || 0,
+          preparePosition: response.log_position?.prepare_position || 0
+        },
+        newStreamVersion: response.new_stream_version || 0
+      };
     } catch (error) {
       this.logger.error(`Failed to save events to stream '${request.stream.name}':`, error);
       
@@ -512,7 +523,7 @@ export class EventStoreClient {
           stream: request.stream,
           after_version: request.afterVersion || 0
         };
-        stream = this.client.catchUpSubscribeToStream(grpcRequest);
+        stream = this.client.catchUpSubscribeToStream(grpcRequest, this.credentials || new grpc.Metadata());
       } else {
         // Subscribe to all events
         const grpcRequest = {
@@ -521,7 +532,7 @@ export class EventStoreClient {
           subscriber_name: request.subscriberName,
           boundary: request.boundary
         };
-        stream = this.client.catchUpSubscribeToEvents(grpcRequest);
+        stream = this.client.catchUpSubscribeToEvents(grpcRequest, this.credentials || new grpc.Metadata());
       }
     } catch (error) {
       // Circuit breaker functionality has been removed
@@ -652,7 +663,7 @@ export class EventStoreClient {
     try {
       // Try to make a simple call to test connectivity
       await this.getEvents({ 
-        boundary: 'test',
+        boundary: 'orisun_test_2',
         stream: { name: 'health-check' },
         count: 1
       });

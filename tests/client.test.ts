@@ -37,7 +37,12 @@ jest.mock('@grpc/proto-loader', () => ({
 // Setup mock implementations
 beforeEach(() => {
   mockSaveEvents.mockImplementation((request, metadata, callback) => {
-    callback(null, {});
+    callback(null, {
+      log_position: {
+        commit_position: 123,
+        prepare_position: 123
+      }
+    });
   });
   
   mockGetEvents.mockImplementation((request, metadata, callback) => {
@@ -165,7 +170,11 @@ describe('EventStoreClient', () => {
         boundary: 'test-boundary'
       };
 
-      await expect(client.saveEvents(request)).resolves.toBeUndefined();
+      const result = await client.saveEvents(request);
+      expect(result).toBeDefined();
+      expect(result.logPosition).toBeDefined();
+      expect(result.logPosition.commitPosition).toBe(123);
+      expect(result.logPosition.preparePosition).toBe(123);
     });
   });
 
