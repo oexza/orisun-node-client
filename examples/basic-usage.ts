@@ -37,13 +37,14 @@ async function basicUsageExample() {
   try {
     console.log('Connecting to Orisun Event Store...');
     
-    // Test connection
-    const isConnected = await client.healthCheck();
-    if (!isConnected) {
-      console.error('Failed to connect to event store');
-      return;
+    // Perform health check to verify connection
+    console.log('Performing health check...');
+    const isHealthy = await client.healthCheck();
+    if (isHealthy) {
+      console.log('Health check passed - connection is healthy');
+    } else {
+      console.log('Health check failed - but continuing with operations...');
     }
-    console.log('Connected successfully!');
 
     // Define some sample events with proper UUIDs
     const events = [
