@@ -197,10 +197,8 @@ class NoopLogger implements Logger {
 }
 
 /**
- * Rate limiter implementation for client operations
+ * orisun client operations
  */
-
-
 export class EventStoreClient {
   private client: any;
   private channel!: grpc.Channel;
