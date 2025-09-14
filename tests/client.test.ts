@@ -147,10 +147,6 @@ describe('EventStoreClient', () => {
       expect(clientWithTarget).toBeInstanceOf(EventStoreClient);
       clientWithTarget.close();
     });
-    
-
-    
-
   });
 
   describe('saveEvents', () => {
