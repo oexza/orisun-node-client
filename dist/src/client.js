@@ -399,13 +399,13 @@ class EventStoreClient {
             else {
                 // Subscribe to all events - use plain object
                 const grpcRequest = {
-                    subscriberName: request.subscriberName,
-                    boundary: request.boundary
+                    subscriber_name: request.subscriberName,
+                    boundary: request.boundary,
                 };
                 if (request.afterPosition) {
                     grpcRequest.afterPosition = {
-                        commitPosition: request.afterPosition.commitPosition,
-                        preparePosition: request.afterPosition.preparePosition
+                        commit_position: request.afterPosition.commitPosition,
+                        prepare_position: request.afterPosition.preparePosition
                     };
                 }
                 if (request.query) {
