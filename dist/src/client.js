@@ -52,13 +52,6 @@ function validateClientOptions(options) {
     if (options.port && (options.port < 1 || options.port > 65535)) {
         throw new Error('Port must be between 1 and 65535');
     }
-    // Validate keepalive options
-    if (options.keepaliveTimeMs && options.keepaliveTimeMs < 0) {
-        throw new Error('keepaliveTimeMs must be a positive number');
-    }
-    if (options.keepaliveTimeoutMs && options.keepaliveTimeoutMs < 0) {
-        throw new Error('keepaliveTimeoutMs must be a positive number');
-    }
     // Validate load balancing policy
     if (options.loadBalancingPolicy &&
         !['round_robin', 'pick_first'].includes(options.loadBalancingPolicy)) {
@@ -82,10 +75,7 @@ class EventStoreClient {
         this.disposed = false;
         // Validate options
         validateClientOptions(options);
-        const { host = 'localhost', port = 5005, target, credentials = grpc.credentials.createInsecure(), username = 'admin', password = 'changeit', keepaliveTimeMs = 30000, // 30 seconds by default
-        keepaliveTimeoutMs = 10000, // 10 seconds by default
-        keepalivePermitWithoutCalls = true, // Allow pings when there are no calls
-        loadBalancingPolicy = 'round_robin', logger, enableLogging = false } = options;
+        const { host = 'localhost', port = 5005, target, credentials = grpc.credentials.createInsecure(), username = 'admin', password = 'changeit', loadBalancingPolicy = 'round_robin', logger, enableLogging = false } = options;
         // Initialize logger
         this.logger = enableLogging ? (logger || console) : new NoopLogger();
         // Load the protobuf definition

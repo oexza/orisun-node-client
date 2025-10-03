@@ -136,18 +136,6 @@ export interface EventStoreClientOptions {
    */
   password?: string;
   /**
-   * Time in milliseconds between keep-alive pings
-   */
-  keepaliveTimeMs?: number;
-  /**
-   * Time in milliseconds to wait for ping response
-   */
-  keepaliveTimeoutMs?: number;
-  /**
-   * Allow keep-alive pings when there are no active calls
-   */
-  keepalivePermitWithoutCalls?: boolean;
-  /**
    * Load balancing policy to use. Options: 'round_robin', 'pick_first'
    * - round_robin: Distributes requests across all available servers
    * - pick_first: Connects to the first available server
@@ -181,17 +169,6 @@ function validateClientOptions(options: EventStoreClientOptions): void {
   if (options.port && (options.port < 1 || options.port > 65535)) {
     throw new Error('Port must be between 1 and 65535');
   }
-
-  // Validate keepalive options
-  if (options.keepaliveTimeMs && options.keepaliveTimeMs < 0) {
-    throw new Error('keepaliveTimeMs must be a positive number');
-  }
-
-  if (options.keepaliveTimeoutMs && options.keepaliveTimeoutMs < 0) {
-    throw new Error('keepaliveTimeoutMs must be a positive number');
-  }
-
-
 
   // Validate load balancing policy
   if (options.loadBalancingPolicy &&
@@ -231,9 +208,6 @@ export class EventStoreClient {
       credentials = grpc.credentials.createInsecure(),
       username = 'admin',
       password = 'changeit',
-      keepaliveTimeMs = 30000, // 30 seconds by default
-      keepaliveTimeoutMs = 10000, // 10 seconds by default
-      keepalivePermitWithoutCalls = true, // Allow pings when there are no calls
       loadBalancingPolicy = 'round_robin',
       logger,
       enableLogging = false
@@ -312,7 +286,7 @@ export class EventStoreClient {
       if (this.disposed) {
         return;
       }
-      
+
       try {
         const isHealthy = await this.healthCheck();
         if (!isHealthy) {
@@ -484,7 +458,7 @@ export class EventStoreClient {
 
     const countValue = request.count || 100;
     this.logger.debug(`Setting count to: ${countValue}`);
-    
+
     // Use plain object instead of protobuf classes
     const grpcRequest: any = {
       boundary: request.boundary,
@@ -509,12 +483,12 @@ export class EventStoreClient {
         fromVersion: request.stream.fromVersion || 0
       };
     }
-    
+
     this.logger.debug(`Getting events from ${streamInfo} with count: ${countValue}`);
 
     try {
       const response = await getEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
-      
+
 
 
       if (!response || !response.events || response.events.length === 0) {
@@ -669,11 +643,11 @@ export class EventStoreClient {
           metadata: JSON.parse(event.metadata || '{}'),
           streamId: event.stream_id,
           version: Number(event.version || '0'),
-            position: {
-              commitPosition: Number(event.position?.commit_position || '0'),
-              preparePosition: Number(event.position?.prepare_position || '0')
-            },
-            dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+          position: {
+            commitPosition: Number(event.position?.commit_position || '0'),
+            preparePosition: Number(event.position?.prepare_position || '0')
+          },
+          dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
         };
         onEvent(parsedEvent);
       } catch (parseError) {

@@ -45,7 +45,7 @@ beforeEach(() => {
       new_stream_version: '123'
     });
   });
-  
+
   mockGetEvents.mockImplementation((request, metadata, callback) => {
     callback(null, {
       events: [
@@ -62,12 +62,12 @@ beforeEach(() => {
       ]
     });
   });
-  
+
   mockCatchUpSubscribeToEvents.mockReturnValue({
     on: jest.fn(),
     cancel: jest.fn()
   });
-  
+
   mockCatchUpSubscribeToStream.mockReturnValue({
     on: jest.fn(),
     cancel: jest.fn()
@@ -100,21 +100,18 @@ describe('EventStoreClient', () => {
     it('should create client with custom options', () => {
       expect(client).toBeInstanceOf(EventStoreClient);
     });
-    
+
     it('should create client with keep-alive options', () => {
       const clientWithKeepalive = new EventStoreClient({
         host: 'localhost',
         port: 5005,
         username: 'test',
         password: 'test',
-        keepaliveTimeMs: 60000,
-        keepaliveTimeoutMs: 20000,
-        keepalivePermitWithoutCalls: false
       });
       expect(clientWithKeepalive).toBeInstanceOf(EventStoreClient);
       clientWithKeepalive.close();
     });
-    
+
     it('should create client with load balancing options', () => {
       const clientWithLoadBalancing = new EventStoreClient({
         host: 'localhost',
@@ -126,7 +123,7 @@ describe('EventStoreClient', () => {
       expect(clientWithLoadBalancing).toBeInstanceOf(EventStoreClient);
       clientWithLoadBalancing.close();
     });
-    
+
     it('should create client with comma-separated hosts for load balancing', () => {
       const clientWithMultipleHosts = new EventStoreClient({
         host: 'host1.example.com,host2.example.com,host3.example.com',
@@ -137,7 +134,7 @@ describe('EventStoreClient', () => {
       expect(clientWithMultipleHosts).toBeInstanceOf(EventStoreClient);
       clientWithMultipleHosts.close();
     });
-    
+
     it('should create client with target string for DNS-based load balancing', () => {
       const clientWithTarget = new EventStoreClient({
         target: 'dns:///eventstore.example.com:5005',
@@ -185,7 +182,7 @@ describe('EventStoreClient', () => {
       };
 
       const events = await client.getEvents(request);
-      
+
       expect(events).toHaveLength(1);
       expect(events[0]).toEqual({
         eventId: 'test-event-1',
@@ -235,7 +232,7 @@ describe('EventStoreClient', () => {
         stream: 'test-stream',
         boundary: 'test-boundary'
       }, onEvent, onError);
-      
+
       expect(subscription).toBeDefined();
       expect(subscription.on).toBeDefined();
       expect(subscription.cancel).toBeDefined();
@@ -253,7 +250,7 @@ describe('EventStoreClient', () => {
         afterPosition: { commitPosition: 100, preparePosition: 100 } as Position,
         boundary: 'test-boundary'
       }, onEvent);
-      
+
       expect(subscription).toBeDefined();
     });
   });

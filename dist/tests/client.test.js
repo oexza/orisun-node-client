@@ -93,9 +93,6 @@ describe('EventStoreClient', () => {
                 port: 5005,
                 username: 'test',
                 password: 'test',
-                keepaliveTimeMs: 60000,
-                keepaliveTimeoutMs: 20000,
-                keepalivePermitWithoutCalls: false
             });
             expect(clientWithKeepalive).toBeInstanceOf(src_1.EventStoreClient);
             clientWithKeepalive.close();

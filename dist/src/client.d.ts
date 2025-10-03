@@ -112,18 +112,6 @@ export interface EventStoreClientOptions {
      */
     password?: string;
     /**
-     * Time in milliseconds between keep-alive pings
-     */
-    keepaliveTimeMs?: number;
-    /**
-     * Time in milliseconds to wait for ping response
-     */
-    keepaliveTimeoutMs?: number;
-    /**
-     * Allow keep-alive pings when there are no active calls
-     */
-    keepalivePermitWithoutCalls?: boolean;
-    /**
      * Load balancing policy to use. Options: 'round_robin', 'pick_first'
      * - round_robin: Distributes requests across all available servers
      * - pick_first: Connects to the first available server
