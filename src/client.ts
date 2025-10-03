@@ -256,11 +256,11 @@ export class EventStoreClient {
 
     // Create the client with keep-alive options and load balancing
     const channelOptions = {
-      'grpc.keepalive_time_ms': keepaliveTimeMs,
-      'grpc.keepalive_timeout_ms': keepaliveTimeoutMs,
-      'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
-      'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
-      'grpc.http2.max_pings_without_data': 0,
+      // 'grpc.keepalive_time_ms': keepaliveTimeMs,
+      // 'grpc.keepalive_timeout_ms': keepaliveTimeoutMs,
+      // 'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
+      // 'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
+      // 'grpc.http2.max_pings_without_data': 0,
       'grpc.lb_policy_name': loadBalancingPolicy,
       'grpc.service_config': JSON.stringify({
         loadBalancingConfig: [{ [loadBalancingPolicy]: {} }]
