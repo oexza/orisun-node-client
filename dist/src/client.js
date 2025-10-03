@@ -152,30 +152,12 @@ class EventStoreClient {
             }
         });
     }
-    async saveEvents(requestOrStreamName, events, expectedVersion) {
-        // Handle overloaded method signatures
-        let request;
-        if (typeof requestOrStreamName === 'string') {
-            if (!events || !Array.isArray(events)) {
-                throw new Error('Events array is required when using streamName parameter');
-            }
-            request = {
-                boundary: 'default',
-                stream: {
-                    name: requestOrStreamName,
-                    expectedVersion: expectedVersion ?? -1
-                },
-                events: events.map(event => ({
-                    eventId: event.eventId,
-                    eventType: event.eventType,
-                    data: event.data,
-                    metadata: event.metadata
-                }))
-            };
-        }
-        else {
-            request = requestOrStreamName;
-        }
+    /**
+     * Save events to a stream
+     * @throws {Error} If the request is invalid or the operation fails
+     * @returns {Promise<WriteResult>} The write result containing the log position
+     */
+    async saveEvents(request) {
         // Check if client is disposed
         if (this.disposed) {
             throw new Error('Client has been disposed');
@@ -212,7 +194,7 @@ class EventStoreClient {
             stream: {
                 name: request.stream.name,
                 expected_version: request.stream.expectedVersion,
-                ...(request.stream.subsetQuery && { subsetquery: request.stream.subsetQuery })
+                ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
             },
             events: request.events.map(event => ({
                 event_id: event.eventId,

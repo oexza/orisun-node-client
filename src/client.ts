@@ -307,39 +307,7 @@ export class EventStoreClient {
    * @throws {Error} If the request is invalid or the operation fails
    * @returns {Promise<WriteResult>} The write result containing the log position
    */
-  async saveEvents(request: SaveEventsRequest): Promise<WriteResult>;
-  async saveEvents(
-    streamName: string,
-    events: Event[],
-    expectedVersion?: number
-  ): Promise<WriteResult>;
-  async saveEvents(
-    requestOrStreamName: SaveEventsRequest | string,
-    events?: Event[],
-    expectedVersion?: number
-  ): Promise<WriteResult> {
-    // Handle overloaded method signatures
-    let request: SaveEventsRequest;
-    if (typeof requestOrStreamName === 'string') {
-      if (!events || !Array.isArray(events)) {
-        throw new Error('Events array is required when using streamName parameter');
-      }
-      request = {
-        boundary: 'default',
-        stream: {
-          name: requestOrStreamName,
-          expectedVersion: expectedVersion ?? -1
-        },
-        events: events.map(event => ({
-          eventId: event.eventId,
-          eventType: event.eventType,
-          data: event.data,
-          metadata: event.metadata
-        }))
-      };
-    } else {
-      request = requestOrStreamName;
-    }
+  async saveEvents(request: SaveEventsRequest): Promise<WriteResult> {
     // Check if client is disposed
     if (this.disposed) {
       throw new Error('Client has been disposed');
@@ -384,7 +352,7 @@ export class EventStoreClient {
       stream: {
         name: request.stream.name,
         expected_version: request.stream.expectedVersion,
-        ...(request.stream.subsetQuery && { subsetquery: request.stream.subsetQuery })
+        ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
       },
       events: request.events.map(event => ({
         event_id: event.eventId,

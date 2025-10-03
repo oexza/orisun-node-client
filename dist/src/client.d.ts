@@ -142,7 +142,6 @@ export declare class EventStoreClient {
      * @returns {Promise<WriteResult>} The write result containing the log position
      */
     saveEvents(request: SaveEventsRequest): Promise<WriteResult>;
-    saveEvents(streamName: string, events: Event[], expectedVersion?: number): Promise<WriteResult>;
     /**
      * Get events from a stream
      * @throws {Error} If the request is invalid or the operation fails

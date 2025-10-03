@@ -170,6 +170,50 @@ describe('EventStoreClient', () => {
       expect(result.logPosition.commitPosition).toBe(123);
       expect(result.logPosition.preparePosition).toBe(123);
     });
+
+    it('should save events with subsetQuery successfully', async () => {
+      const request = {
+        stream: {
+          name: 'test-stream',
+          expectedVersion: 0,
+          subsetQuery: {
+            criteria: [
+              {
+                tags: [
+                  { key: 'category', value: 'test' }
+                ]
+              }
+            ]
+          }
+        },
+        events: [
+          {
+            eventId: 'test-event-1',
+            eventType: 'TestEvent',
+            data: { test: 'data' },
+            metadata: { source: 'test' }
+          }
+        ],
+        boundary: 'test-boundary'
+      };
+
+      const result = await client.saveEvents(request);
+      expect(result).toBeDefined();
+      expect(result.logPosition).toBeDefined();
+      expect(result.logPosition.commitPosition).toBe(123);
+      expect(result.logPosition.preparePosition).toBe(123);
+
+      // Verify that the mock was called with the correct subsetQuery field
+      expect(mockSaveEvents).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          stream: expect.objectContaining({
+            subsetQuery: request.stream.subsetQuery
+          })
+        }),
+        expect.any(Object),
+        expect.any(Function)
+      );
+    });
   });
 
   describe('getEvents', () => {
