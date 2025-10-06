@@ -520,7 +520,7 @@ export class EventStoreClient {
    * Subscribe to events from a stream or all streams
    * @throws {Error} If the request is invalid
    */
-  subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => void, onError?: (error: Error) => void): grpc.ClientReadableStream<any> {
+  subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => Promise<void>, onError?: (error: Error) => void): grpc.ClientReadableStream<any> {
     // Check if client is disposed
     if (this.disposed) {
       throw new Error('Client has been disposed');
@@ -602,7 +602,7 @@ export class EventStoreClient {
     this.logger.debug(`Successfully subscribed to ${streamInfo}`);
 
     // Handle data events
-    stream.on('data', (event: any) => {
+    stream.on('data', async (event: any) => {
       try {
         const parsedEvent: Event = {
           eventId: event.event_id,
@@ -617,7 +617,7 @@ export class EventStoreClient {
           },
           dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
         };
-        onEvent(parsedEvent);
+        await onEvent(parsedEvent);
       } catch (parseError) {
         this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
 

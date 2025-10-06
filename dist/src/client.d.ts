@@ -151,7 +151,7 @@ export declare class EventStoreClient {
      * Subscribe to events from a stream or all streams
      * @throws {Error} If the request is invalid
      */
-    subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => void, onError?: (error: Error) => void): grpc.ClientReadableStream<any>;
+    subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => Promise<void>, onError?: (error: Error) => void): grpc.ClientReadableStream<any>;
     /**
      * Close the client connection and clean up resources
      */

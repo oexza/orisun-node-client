@@ -399,7 +399,7 @@ class EventStoreClient {
         }
         this.logger.debug(`Successfully subscribed to ${streamInfo}`);
         // Handle data events
-        stream.on('data', (event) => {
+        stream.on('data', async (event) => {
             try {
                 const parsedEvent = {
                     eventId: event.event_id,
@@ -414,7 +414,7 @@ class EventStoreClient {
                     },
                     dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
                 };
-                onEvent(parsedEvent);
+                await onEvent(parsedEvent);
             }
             catch (parseError) {
                 this.logger.error(`Failed to parse event data or metadata: ${parseError.message}`);
