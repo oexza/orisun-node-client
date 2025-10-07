@@ -278,8 +278,9 @@ describe('EventStoreClient', () => {
       }, onEvent, onError);
 
       expect(subscription).toBeDefined();
-      expect(subscription.on).toBeDefined();
+      expect(typeof subscription).toBe('object');
       expect(subscription.cancel).toBeDefined();
+      expect(typeof subscription.cancel).toBe('function');
     });
 
     it('should handle subscription without stream', () => {
@@ -296,6 +297,32 @@ describe('EventStoreClient', () => {
       }, onEvent);
 
       expect(subscription).toBeDefined();
+      expect(subscription.cancel).toBeDefined();
+      expect(typeof subscription.cancel).toBe('function');
+    });
+
+    it('should allow cancelling subscription', () => {
+      const mockStream = {
+        on: jest.fn(),
+        cancel: jest.fn()
+      };
+
+      mockCatchUpSubscribeToStream.mockReturnValue(mockStream);
+
+      const onEvent = jest.fn();
+      const subscription = client.subscribeToEvents({
+        subscriberName: 'test-subscriber',
+        stream: 'test-stream',
+        boundary: 'test-boundary'
+      }, onEvent);
+
+      expect(subscription.cancel).toBeDefined();
+      
+      // Call cancel
+      subscription.cancel();
+      
+      // Verify that the stream's cancel method was called
+      expect(mockStream.cancel).toHaveBeenCalled();
     });
   });
 

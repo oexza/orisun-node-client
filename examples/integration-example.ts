@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { EventStoreClient, EventToSave, WriteResult } from '../src';
 
 /**
@@ -32,13 +33,6 @@ async function integrationExample() {
     // Logging configuration
     enableLogging: true, // Enable logging (set to false in production if you want to minimize output)
     logger: console, // Use the default console logger (you can provide a custom logger)
-    
-
-    
-    // Keep-alive configuration for long-running connections
-    keepaliveTimeMs: 30000, // Send keep-alive ping every 30 seconds
-    keepaliveTimeoutMs: 10000, // Wait 10 seconds for ping response
-    keepalivePermitWithoutCalls: true // Allow pings even when idle
   });
 
   try {
@@ -53,13 +47,13 @@ async function integrationExample() {
     }
     console.log('✅ Connected successfully!');
 
-    const boundary = 'demo-tenant';
+    const boundary = 'orisun_test_1';
     const streamName = `order-${Date.now()}`;
 
     // Create some events for an order processing scenario
     const orderEvents: EventToSave[] = [
       {
-        eventId: `order-created-${Date.now()}`,
+        eventId: randomUUID(),
         eventType: 'OrderCreated',
         data: {
           orderId: streamName,
@@ -77,7 +71,7 @@ async function integrationExample() {
         }
       },
       {
-        eventId: `payment-processed-${Date.now()}`,
+        eventId: randomUUID(),
         eventType: 'PaymentProcessed',
         data: {
           orderId: streamName,
@@ -92,7 +86,7 @@ async function integrationExample() {
         }
       },
       {
-        eventId: `order-shipped-${Date.now()}`,
+        eventId: randomUUID(),
         eventType: 'OrderShipped',
         data: {
           orderId: streamName,
@@ -113,7 +107,7 @@ async function integrationExample() {
       boundary,
       stream: {
         name: streamName,
-        expectedVersion: 0 // New stream
+        expectedVersion: -1 // New stream
       },
       events: orderEvents
     });
@@ -144,12 +138,14 @@ async function integrationExample() {
     console.log('\n🔔 Setting up subscription to stream events...');
     const subscription = client.subscribeToEvents(
       {
-        stream: streamName,
         subscriberName: 'integration-example',
         boundary,
-        afterVersion: 0
+        afterPosition: {
+          commitPosition: 29109,
+          preparePosition: 713
+        }
       },
-      (event) => {
+      async (event) => {
         console.log(`\n📨 Received event via subscription:`);
         console.log(`    Type: ${event.eventType}`);
         console.log(`    Stream: ${event.streamId}`);
@@ -168,10 +164,10 @@ async function integrationExample() {
         boundary,
         stream: {
           name: streamName,
-          expectedVersion: 3 // We already have 3 events
+          expectedVersion: 2 // We already have 3 events
         },
         events: [{
-          eventId: `order-delivered-${Date.now()}`,
+          eventId: randomUUID(),
           eventType: 'OrderDelivered',
           data: {
             orderId: streamName,

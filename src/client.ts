@@ -457,8 +457,6 @@ export class EventStoreClient {
     try {
       const response = await getEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
 
-
-
       if (!response || !response.events || response.events.length === 0) {
         this.logger.warn(`No events returned from ${streamInfo}`);
         return [];
@@ -517,10 +515,17 @@ export class EventStoreClient {
   }
 
   /**
-   * Subscribe to events from a stream or all streams
-   * @throws {Error} If the request is invalid
+   * Subscribe to events using async iteration (for await...of)
+   * @param request The subscription request
+   * @param onEvent Event handler function
+   * @param onError Optional error handler function
+   * @returns gRPC stream that can be cancelled
    */
-  subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => Promise<void>, onError?: (error: Error) => void): grpc.ClientReadableStream<any> {
+  subscribeToEvents(
+    request: SubscribeRequest,
+    onEvent: (event: Event) => Promise<void>,
+    onError?: (error: Error) => void
+  ): grpc.ClientReadableStream<any> {
     // Check if client is disposed
     if (this.disposed) {
       throw new Error('Client has been disposed');
@@ -543,7 +548,7 @@ export class EventStoreClient {
     }
 
     const streamInfo = request.stream ? `stream '${request.stream}'` : 'all streams';
-    this.logger.debug(`Subscribing to ${streamInfo} with subscriber '${request.subscriberName}'`);
+    this.logger.debug(`Subscribing to ${streamInfo} with subscriber '${request.subscriberName}' (async)`);
 
     let stream: grpc.ClientReadableStream<any>;
 
@@ -583,8 +588,6 @@ export class EventStoreClient {
         stream = this.client.catchUpSubscribeToEvents(grpcRequest, this.credentials || new grpc.Metadata());
       }
     } catch (error) {
-      // Circuit breaker functionality has been removed
-
       this.logger.error(`Failed to create subscription to ${streamInfo}:`, error);
 
       // Enhance error with context
@@ -599,69 +602,70 @@ export class EventStoreClient {
       throw enhancedError;
     }
 
-    this.logger.debug(`Successfully subscribed to ${streamInfo}`);
+    this.logger.debug(`Successfully subscribed to ${streamInfo} (async)`);
 
-    // Handle data events
-    stream.on('data', async (event: any) => {
+    // Start async iteration in background
+    (async () => {
       try {
-        const parsedEvent: Event = {
-          eventId: event.event_id,
-          eventType: event.event_type,
-          data: JSON.parse(event.data),
-          metadata: JSON.parse(event.metadata || '{}'),
-          streamId: event.stream_id,
-          version: Number(event.version || '0'),
-          position: {
-            commitPosition: Number(event.position?.commit_position || '0'),
-            preparePosition: Number(event.position?.prepare_position || '0')
-          },
-          dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
-        };
-        await onEvent(parsedEvent);
-      } catch (parseError) {
-        this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
+        // Use for await...of for cleaner async iteration
+        for await (const event of stream) {
+          try {
+            const parsedEvent: Event = {
+              eventId: event.event_id,
+              eventType: event.event_type,
+              data: JSON.parse(event.data),
+              metadata: JSON.parse(event.metadata || '{}'),
+              streamId: event.stream_id,
+              version: Number(event.version || '0'),
+              position: {
+                commitPosition: Number(event.position?.commit_position || '0'),
+                preparePosition: Number(event.position?.prepare_position || '0')
+              },
+              dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+            };
 
-        // Call error handler with enhanced error
+            // Events are processed sequentially with await
+            await onEvent(parsedEvent);
+          } catch (parseError) {
+            this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
+
+            // Call error handler with enhanced error
+            const enhancedError = new Error(
+              `Failed to parse event: ${(parseError as Error).message}`
+            );
+            enhancedError.stack = (parseError as Error).stack;
+            (enhancedError as any).originalError = parseError;
+            (enhancedError as any).eventId = event.eventId;
+            (enhancedError as any).eventType = event.eventType;
+
+            if (onError) {
+              onError(enhancedError);
+            } else {
+              this.logger.error('Subscription parse error:', enhancedError);
+            }
+          }
+        }
+
+        this.logger.debug(`Subscription to ${streamInfo} ended (async)`);
+      } catch (error) {
+        this.logger.error(`Subscription error for ${streamInfo}:`, error);
+
+        // Enhance error with context
         const enhancedError = new Error(
-          `Failed to parse event: ${(parseError as Error).message}`
+          `Subscription error for ${streamInfo}: ${(error as Error).message}`
         );
-        enhancedError.stack = (parseError as Error).stack;
-        (enhancedError as any).originalError = parseError;
-        (enhancedError as any).eventId = event.eventId;
-        (enhancedError as any).eventType = event.eventType;
+        enhancedError.stack = (error as Error).stack;
+        (enhancedError as any).originalError = error;
+        (enhancedError as any).streamName = request.stream;
+        (enhancedError as any).subscriberName = request.subscriberName;
 
         if (onError) {
           onError(enhancedError);
         } else {
-          this.logger.error('Subscription parse error:', enhancedError);
+          this.logger.error('Unhandled subscription error:', enhancedError);
         }
       }
-    });
-
-    // Handle stream errors
-    stream.on('error', (error: Error) => {
-      this.logger.error(`Subscription error for ${streamInfo}:`, error);
-
-      // Enhance error with context
-      const enhancedError = new Error(
-        `Subscription error for ${streamInfo}: ${error.message}`
-      );
-      enhancedError.stack = error.stack;
-      (enhancedError as any).originalError = error;
-      (enhancedError as any).streamName = request.stream;
-      (enhancedError as any).subscriberName = request.subscriberName;
-
-      if (onError) {
-        onError(enhancedError);
-      } else {
-        this.logger.error('Unhandled subscription error:', enhancedError);
-      }
-    });
-
-    // Handle end of stream
-    stream.on('end', () => {
-      this.logger.debug(`Subscription to ${streamInfo} ended`);
-    });
+    })();
 
     return stream;
   }

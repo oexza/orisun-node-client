@@ -148,8 +148,11 @@ export declare class EventStoreClient {
      */
     getEvents(request: GetEventsRequest): Promise<Event[]>;
     /**
-     * Subscribe to events from a stream or all streams
-     * @throws {Error} If the request is invalid
+     * Subscribe to events using async iteration (for await...of)
+     * @param request The subscription request
+     * @param onEvent Event handler function
+     * @param onError Optional error handler function
+     * @returns gRPC stream that can be cancelled
      */
     subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => Promise<void>, onError?: (error: Error) => void): grpc.ClientReadableStream<any>;
     /**

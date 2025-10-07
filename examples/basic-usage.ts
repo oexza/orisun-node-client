@@ -25,13 +25,6 @@ async function basicUsageExample() {
     // Logging configuration
     enableLogging: true, // Enable logging (set to false in production if you want to minimize output)
     logger: console, // Use the default console logger (you can provide a custom logger)
-    
-
-    
-    // Keep-alive options for maintaining long-lived connections
-    keepaliveTimeMs: 30000, // Send keep-alive ping every 30 seconds
-    keepaliveTimeoutMs: 10000, // Wait 10 seconds for ping response before considering connection dead
-    keepalivePermitWithoutCalls: true // Allow keep-alive pings even when there are no active calls
   });
 
   try {
@@ -119,7 +112,7 @@ async function basicUsageExample() {
         subscriberName: 'example-subscriber',
         boundary: 'orisun_test_2'
       },
-      (event: Event) => {
+      async (event: Event) => {
         console.log('Received event:', {
           eventId: event.eventId,
           eventType: event.eventType,
