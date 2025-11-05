@@ -11,7 +11,6 @@ export interface Event {
   data: any;
   metadata?: Record<string, string>;
   streamId: string;
-  version: number;
   position: Position;
   dateCreated: string;
 }
@@ -68,7 +67,6 @@ export interface SubscribeRequest {
   subscriberName: string;
   boundary: string;
   stream?: string;
-  afterVersion?: number;
 }
 
 export interface WriteResult {
@@ -613,7 +611,6 @@ export class EventStoreClient {
               data: JSON.parse(event.data),
               metadata: JSON.parse(event.metadata || '{}'),
               streamId: event.stream_id,
-              version: Number(event.version || '0'),
               position: {
                 commitPosition: Number(event.position?.commit_position || '0'),
                 preparePosition: Number(event.position?.prepare_position || '0')

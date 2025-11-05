@@ -6,7 +6,6 @@ export interface Event {
     data: any;
     metadata?: Record<string, string>;
     streamId: string;
-    version: number;
     position: Position;
     dateCreated: string;
 }
@@ -55,7 +54,6 @@ export interface SubscribeRequest {
     subscriberName: string;
     boundary: string;
     stream?: string;
-    afterVersion?: number;
 }
 export interface WriteResult {
     logPosition: Position;

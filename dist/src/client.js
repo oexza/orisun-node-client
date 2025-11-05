@@ -411,7 +411,6 @@ class EventStoreClient {
                             data: JSON.parse(event.data),
                             metadata: JSON.parse(event.metadata || '{}'),
                             streamId: event.stream_id,
-                            version: Number(event.version || '0'),
                             position: {
                                 commitPosition: Number(event.position?.commit_position || '0'),
                                 preparePosition: Number(event.position?.prepare_position || '0')
