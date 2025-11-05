@@ -34,7 +34,7 @@ export interface SaveEventsRequest {
     boundary: string;
     stream: {
         name: string;
-        expectedVersion: number;
+        expectedPosition: Position;
         subsetQuery?: Query;
     };
     events: EventToSave[];
@@ -47,7 +47,6 @@ export interface GetEventsRequest {
     boundary: string;
     stream?: {
         name: string;
-        fromVersion?: number;
     };
 }
 export interface SubscribeRequest {
@@ -60,7 +59,6 @@ export interface SubscribeRequest {
 }
 export interface WriteResult {
     logPosition: Position;
-    newStreamVersion: number;
 }
 export type PbEvent = pb.Event;
 export type PbEventToSave = pb.EventToSave;

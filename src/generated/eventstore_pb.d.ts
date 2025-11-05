@@ -147,8 +147,6 @@ export class Event extends jspb.Message {
     setDateCreated(value?: google_protobuf_timestamp_pb.Timestamp): Event;
     getStreamId(): string;
     setStreamId(value: string): Event;
-    getVersion(): number;
-    setVersion(value: number): Event;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Event.AsObject;
@@ -169,7 +167,6 @@ export namespace Event {
         position?: Position.AsObject,
         dateCreated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
         streamId: string,
-        version: number,
     }
 }
 
@@ -179,8 +176,6 @@ export class WriteResult extends jspb.Message {
     clearLogPosition(): void;
     getLogPosition(): Position | undefined;
     setLogPosition(value?: Position): WriteResult;
-    getNewStreamVersion(): number;
-    setNewStreamVersion(value: number): WriteResult;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): WriteResult.AsObject;
@@ -195,15 +190,17 @@ export class WriteResult extends jspb.Message {
 export namespace WriteResult {
     export type AsObject = {
         logPosition?: Position.AsObject,
-        newStreamVersion: number,
     }
 }
 
 export class SaveStreamQuery extends jspb.Message { 
     getName(): string;
     setName(value: string): SaveStreamQuery;
-    getExpectedVersion(): number;
-    setExpectedVersion(value: number): SaveStreamQuery;
+
+    hasExpectedPosition(): boolean;
+    clearExpectedPosition(): void;
+    getExpectedPosition(): Position | undefined;
+    setExpectedPosition(value?: Position): SaveStreamQuery;
 
     hasSubsetquery(): boolean;
     clearSubsetquery(): void;
@@ -223,7 +220,7 @@ export class SaveStreamQuery extends jspb.Message {
 export namespace SaveStreamQuery {
     export type AsObject = {
         name: string,
-        expectedVersion: number,
+        expectedPosition?: Position.AsObject,
         subsetquery?: Query.AsObject,
     }
 }
@@ -262,8 +259,11 @@ export namespace SaveEventsRequest {
 export class GetStreamQuery extends jspb.Message { 
     getName(): string;
     setName(value: string): GetStreamQuery;
-    getFromVersion(): number;
-    setFromVersion(value: number): GetStreamQuery;
+
+    hasFromPosition(): boolean;
+    clearFromPosition(): void;
+    getFromPosition(): Position | undefined;
+    setFromPosition(value?: Position): GetStreamQuery;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): GetStreamQuery.AsObject;
@@ -278,7 +278,7 @@ export class GetStreamQuery extends jspb.Message {
 export namespace GetStreamQuery {
     export type AsObject = {
         name: string,
-        fromVersion: number,
+        fromPosition?: Position.AsObject,
     }
 }
 
@@ -395,8 +395,11 @@ export class CatchUpSubscribeToStreamRequest extends jspb.Message {
     setBoundary(value: string): CatchUpSubscribeToStreamRequest;
     getStream(): string;
     setStream(value: string): CatchUpSubscribeToStreamRequest;
-    getAfterversion(): number;
-    setAfterversion(value: number): CatchUpSubscribeToStreamRequest;
+
+    hasAfterPosition(): boolean;
+    clearAfterPosition(): void;
+    getAfterPosition(): Position | undefined;
+    setAfterPosition(value?: Position): CatchUpSubscribeToStreamRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): CatchUpSubscribeToStreamRequest.AsObject;
@@ -414,7 +417,7 @@ export namespace CatchUpSubscribeToStreamRequest {
         subscriberName: string,
         boundary: string,
         stream: string,
-        afterversion: number,
+        afterPosition?: Position.AsObject,
     }
 }
 

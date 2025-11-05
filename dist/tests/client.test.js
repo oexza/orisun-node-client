@@ -49,8 +49,7 @@ beforeEach(() => {
                     data: JSON.stringify({ test: 'data' }),
                     metadata: JSON.stringify({ source: 'test' }),
                     stream_id: 'test-stream',
-                    version: '1',
-                    position: { commit_position: '1', prepare_position: '1' },
+                    position: { commit_position: '0', prepare_position: '0' },
                     date_created: { seconds: '1704067200', nanos: 0 }
                 }
             ]
@@ -128,12 +127,16 @@ describe('EventStoreClient', () => {
             clientWithTarget.close();
         });
     });
+    var firstSaveResponse;
     describe('saveEvents', () => {
         it('should save events successfully', async () => {
             const request = {
                 stream: {
                     name: 'test-stream',
-                    expectedVersion: 0
+                    expectedPosition: {
+                        commitPosition: -1,
+                        preparePosition: -1
+                    },
                 },
                 events: [
                     {
@@ -145,17 +148,17 @@ describe('EventStoreClient', () => {
                 ],
                 boundary: 'test-boundary'
             };
-            const result = await client.saveEvents(request);
-            expect(result).toBeDefined();
-            expect(result.logPosition).toBeDefined();
-            expect(result.logPosition.commitPosition).toBe(123);
-            expect(result.logPosition.preparePosition).toBe(123);
+            firstSaveResponse = await client.saveEvents(request);
+            expect(firstSaveResponse).toBeDefined();
+            expect(firstSaveResponse.logPosition).toBeDefined();
+            expect(firstSaveResponse.logPosition.commitPosition).toBe(123);
+            expect(firstSaveResponse.logPosition.preparePosition).toBe(123);
         });
         it('should save events with subsetQuery successfully', async () => {
             const request = {
                 stream: {
                     name: 'test-stream',
-                    expectedVersion: 0,
+                    expectedPosition: firstSaveResponse.logPosition,
                     subsetQuery: {
                         criteria: [
                             {
@@ -205,10 +208,9 @@ describe('EventStoreClient', () => {
                 data: { test: 'data' },
                 metadata: { source: 'test' },
                 streamId: 'test-stream',
-                version: 1,
                 position: {
-                    commitPosition: 1,
-                    preparePosition: 1
+                    commitPosition: 0,
+                    preparePosition: 0
                 },
                 dateCreated: '2024-01-01T00:00:00.000Z'
             });

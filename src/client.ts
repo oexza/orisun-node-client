@@ -45,7 +45,7 @@ export interface SaveEventsRequest {
   boundary: string;
   stream: {
     name: string;
-    expectedVersion: number;
+    expectedPosition: Position;
     subsetQuery?: Query;
   };
   events: EventToSave[];
@@ -59,7 +59,6 @@ export interface GetEventsRequest {
   boundary: string;
   stream?: {
     name: string;
-    fromVersion?: number;
   };
 }
 
@@ -74,7 +73,6 @@ export interface SubscribeRequest {
 
 export interface WriteResult {
   logPosition: Position;
-  newStreamVersion: number;
 }
 
 // Re-export generated protobuf types for internal use
@@ -351,7 +349,7 @@ export class EventStoreClient {
       boundary: request.boundary,
       stream: {
         name: request.stream.name,
-        expected_version: request.stream.expectedVersion,
+        expected_position: request.stream.expectedPosition,
         ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
       },
       events: request.events.map(event => ({
@@ -372,8 +370,7 @@ export class EventStoreClient {
         logPosition: {
           commitPosition: Number(response.log_position?.commit_position || '0'),
           preparePosition: Number(response.log_position?.prepare_position || '0')
-        },
-        newStreamVersion: Number(response.new_stream_version || '0')
+        }
       };
     } catch (error) {
       this.logger.error(`Failed to save events to stream '${request.stream.name}':`, error);
@@ -448,7 +445,6 @@ export class EventStoreClient {
     if (request.stream) {
       grpcRequest.stream = {
         name: request.stream.name,
-        fromVersion: request.stream.fromVersion || 0
       };
     }
 
@@ -470,7 +466,6 @@ export class EventStoreClient {
             data: JSON.parse(event.data),
             metadata: JSON.parse(event.metadata || '{}'),
             streamId: event.stream_id,
-            version: Number(event.version || '0'),
             position: {
               commitPosition: Number(event.position?.commit_position || '0'),
               preparePosition: Number(event.position?.prepare_position || '0')
@@ -486,7 +481,6 @@ export class EventStoreClient {
             data: event.data, // Raw string
             metadata: event.metadata || '{}', // Raw string
             streamId: event.stream_id,
-            version: Number(event.version || '0'),
             position: {
               commitPosition: Number(event.position?.commit_position || '0'),
               preparePosition: Number(event.position?.prepare_position || '0')
@@ -559,7 +553,10 @@ export class EventStoreClient {
           subscriber_name: request.subscriberName,
           boundary: request.boundary,
           stream: request.stream,
-          afterVersion: request.afterVersion || 0
+          afterPosition: request.afterPosition ? {
+            commit_position: request.afterPosition.commitPosition,
+            prepare_position: request.afterPosition.preparePosition
+          } : null
         };
 
         if (request.query) {

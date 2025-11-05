@@ -1230,8 +1230,7 @@ proto.eventstore.Event.toObject = function(includeInstance, msg) {
     metadata: jspb.Message.getFieldWithDefault(msg, 4, ""),
     position: (f = msg.getPosition()) && proto.eventstore.Position.toObject(includeInstance, f),
     dateCreated: (f = msg.getDateCreated()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-    streamId: jspb.Message.getFieldWithDefault(msg, 8, ""),
-    version: jspb.Message.getFieldWithDefault(msg, 9, 0)
+    streamId: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -1297,10 +1296,6 @@ proto.eventstore.Event.deserializeBinaryFromReader = function(msg, reader) {
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setStreamId(value);
-      break;
-    case 9:
-      var value = /** @type {number} */ (reader.readUint64());
-      msg.setVersion(value);
       break;
     default:
       reader.skipField();
@@ -1379,13 +1374,6 @@ proto.eventstore.Event.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeString(
       8,
-      f
-    );
-  }
-  f = message.getVersion();
-  if (f !== 0) {
-    writer.writeUint64(
-      9,
       f
     );
   }
@@ -1556,24 +1544,6 @@ proto.eventstore.Event.prototype.setStreamId = function(value) {
 };
 
 
-/**
- * optional uint64 version = 9;
- * @return {number}
- */
-proto.eventstore.Event.prototype.getVersion = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.eventstore.Event} returns this
- */
-proto.eventstore.Event.prototype.setVersion = function(value) {
-  return jspb.Message.setProto3IntField(this, 9, value);
-};
-
-
 
 
 
@@ -1606,8 +1576,7 @@ proto.eventstore.WriteResult.prototype.toObject = function(opt_includeInstance) 
  */
 proto.eventstore.WriteResult.toObject = function(includeInstance, msg) {
   var f, obj = {
-    logPosition: (f = msg.getLogPosition()) && proto.eventstore.Position.toObject(includeInstance, f),
-    newStreamVersion: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    logPosition: (f = msg.getLogPosition()) && proto.eventstore.Position.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1649,10 +1618,6 @@ proto.eventstore.WriteResult.deserializeBinaryFromReader = function(msg, reader)
       reader.readMessage(value,proto.eventstore.Position.deserializeBinaryFromReader);
       msg.setLogPosition(value);
       break;
-    case 2:
-      var value = /** @type {number} */ (reader.readInt64());
-      msg.setNewStreamVersion(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -1688,13 +1653,6 @@ proto.eventstore.WriteResult.serializeBinaryToWriter = function(message, writer)
       1,
       f,
       proto.eventstore.Position.serializeBinaryToWriter
-    );
-  }
-  f = message.getNewStreamVersion();
-  if (f !== 0) {
-    writer.writeInt64(
-      2,
-      f
     );
   }
 };
@@ -1737,24 +1695,6 @@ proto.eventstore.WriteResult.prototype.hasLogPosition = function() {
 };
 
 
-/**
- * optional int64 new_stream_version = 2;
- * @return {number}
- */
-proto.eventstore.WriteResult.prototype.getNewStreamVersion = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.eventstore.WriteResult} returns this
- */
-proto.eventstore.WriteResult.prototype.setNewStreamVersion = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
-};
-
-
 
 
 
@@ -1788,7 +1728,7 @@ proto.eventstore.SaveStreamQuery.prototype.toObject = function(opt_includeInstan
 proto.eventstore.SaveStreamQuery.toObject = function(includeInstance, msg) {
   var f, obj = {
     name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    expectedVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    expectedPosition: (f = msg.getExpectedPosition()) && proto.eventstore.Position.toObject(includeInstance, f),
     subsetquery: (f = msg.getSubsetquery()) && proto.eventstore.Query.toObject(includeInstance, f)
   };
 
@@ -1831,8 +1771,9 @@ proto.eventstore.SaveStreamQuery.deserializeBinaryFromReader = function(msg, rea
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt64());
-      msg.setExpectedVersion(value);
+      var value = new proto.eventstore.Position;
+      reader.readMessage(value,proto.eventstore.Position.deserializeBinaryFromReader);
+      msg.setExpectedPosition(value);
       break;
     case 3:
       var value = new proto.eventstore.Query;
@@ -1875,11 +1816,12 @@ proto.eventstore.SaveStreamQuery.serializeBinaryToWriter = function(message, wri
       f
     );
   }
-  f = message.getExpectedVersion();
-  if (f !== 0) {
-    writer.writeInt64(
+  f = message.getExpectedPosition();
+  if (f != null) {
+    writer.writeMessage(
       2,
-      f
+      f,
+      proto.eventstore.Position.serializeBinaryToWriter
     );
   }
   f = message.getSubsetquery();
@@ -1912,20 +1854,39 @@ proto.eventstore.SaveStreamQuery.prototype.setName = function(value) {
 
 
 /**
- * optional int64 expected_version = 2;
- * @return {number}
+ * optional Position expected_position = 2;
+ * @return {?proto.eventstore.Position}
  */
-proto.eventstore.SaveStreamQuery.prototype.getExpectedVersion = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+proto.eventstore.SaveStreamQuery.prototype.getExpectedPosition = function() {
+  return /** @type{?proto.eventstore.Position} */ (
+    jspb.Message.getWrapperField(this, proto.eventstore.Position, 2));
 };
 
 
 /**
- * @param {number} value
+ * @param {?proto.eventstore.Position|undefined} value
+ * @return {!proto.eventstore.SaveStreamQuery} returns this
+*/
+proto.eventstore.SaveStreamQuery.prototype.setExpectedPosition = function(value) {
+  return jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
  * @return {!proto.eventstore.SaveStreamQuery} returns this
  */
-proto.eventstore.SaveStreamQuery.prototype.setExpectedVersion = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+proto.eventstore.SaveStreamQuery.prototype.clearExpectedPosition = function() {
+  return this.setExpectedPosition(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.eventstore.SaveStreamQuery.prototype.hasExpectedPosition = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -2240,7 +2201,7 @@ proto.eventstore.GetStreamQuery.prototype.toObject = function(opt_includeInstanc
 proto.eventstore.GetStreamQuery.toObject = function(includeInstance, msg) {
   var f, obj = {
     name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    fromVersion: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    fromPosition: (f = msg.getFromPosition()) && proto.eventstore.Position.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2282,8 +2243,9 @@ proto.eventstore.GetStreamQuery.deserializeBinaryFromReader = function(msg, read
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt64());
-      msg.setFromVersion(value);
+      var value = new proto.eventstore.Position;
+      reader.readMessage(value,proto.eventstore.Position.deserializeBinaryFromReader);
+      msg.setFromPosition(value);
       break;
     default:
       reader.skipField();
@@ -2321,11 +2283,12 @@ proto.eventstore.GetStreamQuery.serializeBinaryToWriter = function(message, writ
       f
     );
   }
-  f = message.getFromVersion();
-  if (f !== 0) {
-    writer.writeInt64(
+  f = message.getFromPosition();
+  if (f != null) {
+    writer.writeMessage(
       2,
-      f
+      f,
+      proto.eventstore.Position.serializeBinaryToWriter
     );
   }
 };
@@ -2350,20 +2313,39 @@ proto.eventstore.GetStreamQuery.prototype.setName = function(value) {
 
 
 /**
- * optional int64 from_version = 2;
- * @return {number}
+ * optional Position from_position = 2;
+ * @return {?proto.eventstore.Position}
  */
-proto.eventstore.GetStreamQuery.prototype.getFromVersion = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+proto.eventstore.GetStreamQuery.prototype.getFromPosition = function() {
+  return /** @type{?proto.eventstore.Position} */ (
+    jspb.Message.getWrapperField(this, proto.eventstore.Position, 2));
 };
 
 
 /**
- * @param {number} value
+ * @param {?proto.eventstore.Position|undefined} value
+ * @return {!proto.eventstore.GetStreamQuery} returns this
+*/
+proto.eventstore.GetStreamQuery.prototype.setFromPosition = function(value) {
+  return jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
  * @return {!proto.eventstore.GetStreamQuery} returns this
  */
-proto.eventstore.GetStreamQuery.prototype.setFromVersion = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+proto.eventstore.GetStreamQuery.prototype.clearFromPosition = function() {
+  return this.setFromPosition(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.eventstore.GetStreamQuery.prototype.hasFromPosition = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -3168,7 +3150,7 @@ proto.eventstore.CatchUpSubscribeToStreamRequest.toObject = function(includeInst
     subscriberName: jspb.Message.getFieldWithDefault(msg, 3, ""),
     boundary: jspb.Message.getFieldWithDefault(msg, 4, ""),
     stream: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    afterversion: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    afterPosition: (f = msg.getAfterPosition()) && proto.eventstore.Position.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3223,8 +3205,9 @@ proto.eventstore.CatchUpSubscribeToStreamRequest.deserializeBinaryFromReader = f
       msg.setStream(value);
       break;
     case 6:
-      var value = /** @type {number} */ (reader.readInt64());
-      msg.setAfterversion(value);
+      var value = new proto.eventstore.Position;
+      reader.readMessage(value,proto.eventstore.Position.deserializeBinaryFromReader);
+      msg.setAfterPosition(value);
       break;
     default:
       reader.skipField();
@@ -3284,11 +3267,12 @@ proto.eventstore.CatchUpSubscribeToStreamRequest.serializeBinaryToWriter = funct
       f
     );
   }
-  f = message.getAfterversion();
-  if (f !== 0) {
-    writer.writeInt64(
+  f = message.getAfterPosition();
+  if (f != null) {
+    writer.writeMessage(
       6,
-      f
+      f,
+      proto.eventstore.Position.serializeBinaryToWriter
     );
   }
 };
@@ -3386,20 +3370,39 @@ proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.setStream = function(
 
 
 /**
- * optional int64 afterVersion = 6;
- * @return {number}
+ * optional Position after_position = 6;
+ * @return {?proto.eventstore.Position}
  */
-proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.getAfterversion = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.getAfterPosition = function() {
+  return /** @type{?proto.eventstore.Position} */ (
+    jspb.Message.getWrapperField(this, proto.eventstore.Position, 6));
 };
 
 
 /**
- * @param {number} value
+ * @param {?proto.eventstore.Position|undefined} value
+ * @return {!proto.eventstore.CatchUpSubscribeToStreamRequest} returns this
+*/
+proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.setAfterPosition = function(value) {
+  return jspb.Message.setWrapperField(this, 6, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
  * @return {!proto.eventstore.CatchUpSubscribeToStreamRequest} returns this
  */
-proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.setAfterversion = function(value) {
-  return jspb.Message.setProto3IntField(this, 6, value);
+proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.clearAfterPosition = function() {
+  return this.setAfterPosition(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.eventstore.CatchUpSubscribeToStreamRequest.prototype.hasAfterPosition = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
