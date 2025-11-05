@@ -193,7 +193,10 @@ class EventStoreClient {
             boundary: request.boundary,
             stream: {
                 name: request.stream.name,
-                expected_position: request.stream.expectedPosition,
+                expected_position: request.stream.expectedPosition ? {
+                    commit_position: request.stream.expectedPosition.commitPosition,
+                    prepare_position: request.stream.expectedPosition.preparePosition
+                } : null,
                 ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
             },
             events: request.events.map(event => ({
