@@ -134,6 +134,18 @@ export declare class EventStoreClient {
     private cachedToken?;
     constructor(options?: EventStoreClientOptions);
     /**
+     * Create metadata with authentication token or basic auth
+     * @param operation Optional description of the operation for logging
+     * @returns gRPC Metadata with authentication headers
+     */
+    private createAuthMetadata;
+    /**
+     * Set up metadata event listener to cache authentication tokens from response
+     * @param call The gRPC call object
+     * @param operation Optional description of the operation for logging
+     */
+    private setupTokenCaching;
+    /**
      * Save events to a stream
      * @throws {Error} If the request is invalid or the operation fails
      * @returns {Promise<WriteResult>} The write result containing the log position

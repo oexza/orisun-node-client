@@ -465,6 +465,15 @@ describe('EventStoreClient', () => {
                         return [];
                     })
                 };
+                // Mock call object with 'on' method
+                const mockCall = {
+                    on: jest.fn((event, handler) => {
+                        if (event === 'metadata') {
+                            // Call the handler with the response metadata
+                            handler(responseMetadata);
+                        }
+                    })
+                };
                 callback(null, {
                     events: [
                         {
@@ -476,9 +485,9 @@ describe('EventStoreClient', () => {
                             position: { commit_position: '0', prepare_position: '0' },
                             date_created: { seconds: '1704067200', nanos: 0 }
                         }
-                    ],
-                    metadata: responseMetadata
-                }, responseMetadata);
+                    ]
+                });
+                return mockCall;
             });
             const request = {
                 stream: {
