@@ -58,19 +58,35 @@ beforeEach(() => {
   });
 
   mockGetEvents.mockImplementation((request, metadata, callback) => {
-    callback(null, {
-      events: [
-        {
-          event_id: 'test-event-1',
-          event_type: 'TestEvent',
-          data: JSON.stringify({ test: 'data' }),
-          metadata: JSON.stringify({ source: 'test' }),
-          stream_id: 'test-stream',
-          position: { commit_position: '0', prepare_position: '0' },
-          date_created: { seconds: '1704067200', nanos: 0 }
+    // Return a mock call object with an 'on' method
+    const mockCall = {
+      on: jest.fn((event, handler) => {
+        if (event === 'metadata') {
+          // Call the handler with empty metadata
+          handler(new grpc.Metadata());
         }
-      ]
-    });
+      })
+    };
+    
+    // For health check, return empty events array
+    if (request.stream && request.stream.name === 'health-check') {
+      callback(null, { events: [] });
+    } else {
+      callback(null, {
+        events: [
+          {
+            event_id: 'test-event-1',
+            event_type: 'TestEvent',
+            data: JSON.stringify({ test: 'data' }),
+            metadata: JSON.stringify({ source: 'test' }),
+            stream_id: 'test-stream',
+            position: { commit_position: '0', prepare_position: '0' },
+            date_created: { seconds: '1704067200', nanos: 0 }
+          }
+        ]
+      });
+    }
+    return mockCall;
   });
 
   mockCatchUpSubscribeToEvents.mockReturnValue({
@@ -84,7 +100,17 @@ beforeEach(() => {
   });
 
   mockPing.mockImplementation((request, metadata, callback) => {
+    // Return a mock call object with an 'on' method
+    const mockCall = {
+      on: jest.fn((event, handler) => {
+        if (event === 'metadata') {
+          // Call the handler with empty metadata
+          handler(new grpc.Metadata());
+        }
+      })
+    };
     callback(null, {});
+    return mockCall;
   });
 });
 
@@ -369,7 +395,19 @@ describe('EventStoreClient', () => {
       mockPing.mockImplementationOnce((request, metadata, callback) => {
         // Check that metadata contains cached token
         expect(metadata.get('x-auth-token')).toContain('cached-token-123');
+        
+        // Return a mock call object with an 'on' method
+        const mockCall = {
+          on: jest.fn((event, handler) => {
+            if (event === 'metadata') {
+              // Call the handler with empty metadata
+              handler(new grpc.Metadata());
+            }
+          })
+        };
+        
         callback(null, {});
+        return mockCall;
       });
 
       await client.ping();
@@ -388,13 +426,25 @@ describe('EventStoreClient', () => {
             return [];
           })
         };
+        
+        // Mock call object with 'on' method
+        const mockCall = {
+          on: jest.fn((event, handler) => {
+            if (event === 'metadata') {
+              // Call the handler with the response metadata
+              handler(responseMetadata);
+            }
+          })
+        };
+        
         callback(null, {
           log_position: {
             commit_position: '123',
             prepare_position: '123'
-          },
-          metadata: responseMetadata
-        }, responseMetadata);
+          }
+        });
+        
+        return mockCall;
       });
 
       const request = {
@@ -477,7 +527,7 @@ describe('EventStoreClient', () => {
       await client.getEvents(request);
     });
 
-    it('should use cached token for subscriptions', () => {
+    it('should use cached token for subscriptions', async () => {
       // First, establish a cached token by calling saveEvents
       mockSaveEvents.mockImplementationOnce((request, metadata, callback) => {
         const responseMetadata = {
@@ -488,13 +538,25 @@ describe('EventStoreClient', () => {
             return [];
           })
         };
+        
+        // Mock call object with 'on' method
+        const mockCall = {
+          on: jest.fn((event, handler) => {
+            if (event === 'metadata') {
+              // Call the handler with the response metadata
+              handler(responseMetadata);
+            }
+          })
+        };
+        
         callback(null, {
           log_position: {
             commit_position: '123',
             prepare_position: '123'
-          },
-          metadata: responseMetadata
-        }, responseMetadata);
+          }
+        });
+        
+        return mockCall;
       });
 
       const saveRequest = {
@@ -516,24 +578,24 @@ describe('EventStoreClient', () => {
         boundary: 'test-boundary'
       };
 
-      // We need to make the saveEvents call async to establish the token
-      client.saveEvents(saveRequest).then(() => {
-        // Now test subscription with cached token
-        mockCatchUpSubscribeToStream.mockImplementationOnce((request, metadata) => {
-          expect(metadata.get('x-auth-token')).toContain('subscription-token');
-          return {
-            on: jest.fn(),
-            cancel: jest.fn()
-          };
-        });
+      // Make the saveEvents call to establish the token
+      await client.saveEvents(saveRequest);
 
-        const onEvent = jest.fn();
-        client.subscribeToEvents({
-          subscriberName: 'test-subscriber',
-          stream: 'test-stream',
-          boundary: 'test-boundary'
-        }, onEvent);
+      // Now test subscription with cached token
+      mockCatchUpSubscribeToStream.mockImplementationOnce((request, metadata) => {
+        expect(metadata.get('x-auth-token')).toContain('subscription-token');
+        return {
+          on: jest.fn(),
+          cancel: jest.fn()
+        };
       });
+
+      const onEvent = jest.fn();
+      client.subscribeToEvents({
+        subscriberName: 'test-subscriber',
+        stream: 'test-stream',
+        boundary: 'test-boundary'
+      }, onEvent);
     });
   });
 

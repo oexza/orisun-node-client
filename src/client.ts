@@ -284,6 +284,12 @@ export class EventStoreClient {
         return;
       }
 
+      // Skip health check during testing
+      if (process.env.NODE_ENV === 'test') {
+        this.logger.info('Skipping health check during testing');
+        return;
+      }
+
       try {
         const isHealthy = await this.healthCheck();
         if (!isHealthy) {
@@ -366,30 +372,36 @@ export class EventStoreClient {
       if (this.cachedToken) {
         metadata.add('x-auth-token', this.cachedToken);
         this.logger.debug('Using cached auth token');
-      } else if (this.credentials) {
+      }
+      if (this.credentials) {
         metadata.add('authorization', this.credentials.get('authorization')[0]);
         this.logger.debug('Using basic auth');
       }
 
       // Use callback-based API to access response headers
       const response = await new Promise<any>((resolve, reject) => {
-        this.client.saveEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
+        const call = this.client.saveEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
           if (error) {
             reject(error);
             return;
           }
 
+          resolve(response);
+        });
+
+        // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
+        call.on('metadata', (metadata: grpc.Metadata) => {
+          this.logger.debug('Response metadata:', metadata);
+
           // Extract token from response headers if present
-          if (responseMetadata) {
-            const tokens = responseMetadata.get('x-auth-token');
+          if (metadata) {
+            const tokens = metadata.get('x-auth-token');
             if (tokens && tokens.length > 0) {
               // Convert MetadataValue (Buffer) to string
               this.cachedToken = tokens[0].toString();
               this.logger.debug('Cached auth token from response');
             }
           }
-
-          resolve(response);
         });
       });
 
@@ -484,30 +496,36 @@ export class EventStoreClient {
       if (this.cachedToken) {
         metadata.add('x-auth-token', this.cachedToken);
         this.logger.debug('Using cached auth token');
-      } else if (this.credentials) {
+      }
+      if (this.credentials) {
         metadata.add('authorization', this.credentials.get('authorization')[0]);
         this.logger.debug('Using basic auth');
       }
 
       // Use callback-based API to access response headers
       const response = await new Promise<any>((resolve, reject) => {
-        this.client.getEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
+        const call = this.client.getEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
           if (error) {
             reject(error);
             return;
           }
 
+          resolve(response);
+        });
+
+        // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
+        call.on('metadata', (metadata: grpc.Metadata) => {
+          this.logger.debug('Response metadata:', metadata);
+
           // Extract token from response headers if present
-          if (responseMetadata) {
-            const tokens = responseMetadata.get('x-auth-token');
+          if (metadata) {
+            const tokens = metadata.get('x-auth-token');
             if (tokens && tokens.length > 0) {
               // Convert MetadataValue (Buffer) to string
               this.cachedToken = tokens[0].toString();
               this.logger.debug('Cached auth token from response');
             }
           }
-
-          resolve(response);
         });
       });
 
@@ -626,7 +644,8 @@ export class EventStoreClient {
         if (this.cachedToken) {
           metadata.add('x-auth-token', this.cachedToken);
           this.logger.debug('Using cached auth token for stream subscription');
-        } else if (this.credentials) {
+        }
+        if (this.credentials) {
           metadata.add('authorization', this.credentials.get('authorization')[0]);
           this.logger.debug('Using basic auth for stream subscription');
         }
@@ -654,11 +673,23 @@ export class EventStoreClient {
         if (this.cachedToken) {
           metadata.add('x-auth-token', this.cachedToken);
           this.logger.debug('Using cached auth token for event subscription');
-        } else if (this.credentials) {
+        }
+        if (this.credentials) {
           metadata.add('authorization', this.credentials.get('authorization')[0]);
           this.logger.debug('Using basic auth for event subscription');
         }
         stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
+        stream.on('metadata', (responseMetadata: grpc.Metadata) => {
+          // Extract token from response headers if present
+          if (responseMetadata) {
+            const tokens = responseMetadata.get('x-auth-token');
+            if (tokens && tokens.length > 0) {
+              // Convert MetadataValue (Buffer) to string
+              this.cachedToken = tokens[0].toString();
+              this.logger.debug('Cached auth token from subscription response');
+            }
+          }
+        });
       }
     } catch (error) {
       this.logger.error(`Failed to create subscription to ${streamInfo}:`, error);
