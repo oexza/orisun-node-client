@@ -131,6 +131,7 @@ export declare class EventStoreClient {
     private logger;
     private credentials?;
     private disposed;
+    private cachedToken?;
     constructor(options?: EventStoreClientOptions);
     /**
      * Save events to a stream
@@ -155,6 +156,11 @@ export declare class EventStoreClient {
      * Close the client connection and clean up resources
      */
     close(): void;
+    /**
+     * Ping the server to check connectivity
+     * @returns Promise<void> Resolves if the server responds successfully
+     */
+    ping(): Promise<void>;
     /**
      * Check if the client is connected to the server
      * @returns Promise<boolean> True if connected, false otherwise

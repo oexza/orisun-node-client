@@ -207,8 +207,29 @@ class EventStoreClient {
             }))
         };
         try {
-            const response = await saveEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
+            // Create metadata with token if cached, otherwise use basic auth
+            const metadata = new grpc.Metadata();
+            if (this.cachedToken) {
+                metadata.add('x-auth-token', this.cachedToken);
+                this.logger.debug('Using cached auth token');
+            }
+            else if (this.credentials) {
+                metadata.add('authorization', this.credentials.get('authorization')[0]);
+                this.logger.debug('Using basic auth');
+            }
+            const response = await saveEventsAsync(grpcRequest, metadata);
             this.logger.info(`Successfully saved events to stream '${request.stream.name}'`);
+            // Extract token from response headers if present
+            if (response && typeof response === 'object' && 'metadata' in response) {
+                const responseMetadata = response.metadata;
+                if (responseMetadata) {
+                    const tokens = responseMetadata.get('x-auth-token');
+                    if (tokens && tokens.length > 0) {
+                        this.cachedToken = tokens[0];
+                        this.logger.debug('Cached auth token from response');
+                    }
+                }
+            }
             // Transform the gRPC response to match our interface
             return {
                 logPosition: {
@@ -278,7 +299,17 @@ class EventStoreClient {
         }
         this.logger.debug(`Getting events from ${streamInfo} with count: ${countValue}`);
         try {
-            const response = await getEventsAsync(grpcRequest, this.credentials || new grpc.Metadata());
+            // Create metadata with token if cached, otherwise use basic auth
+            const metadata = new grpc.Metadata();
+            if (this.cachedToken) {
+                metadata.add('x-auth-token', this.cachedToken);
+                this.logger.debug('Using cached auth token');
+            }
+            else if (this.credentials) {
+                metadata.add('authorization', this.credentials.get('authorization')[0]);
+                this.logger.debug('Using basic auth');
+            }
+            const response = await getEventsAsync(grpcRequest, metadata);
             if (!response || !response.events || response.events.length === 0) {
                 this.logger.warn(`No events returned from ${streamInfo}`);
                 return [];
@@ -315,6 +346,17 @@ class EventStoreClient {
                     };
                 }
             });
+            // Extract token from response headers if present
+            if (response && typeof response === 'object' && 'metadata' in response) {
+                const responseMetadata = response.metadata;
+                if (responseMetadata) {
+                    const tokens = responseMetadata.get('x-auth-token');
+                    if (tokens && tokens.length > 0) {
+                        this.cachedToken = tokens[0];
+                        this.logger.debug('Cached auth token from response');
+                    }
+                }
+            }
             this.logger.debug(`Successfully retrieved ${events.length} events from ${streamInfo}`);
             return events;
         }
@@ -371,7 +413,17 @@ class EventStoreClient {
                 if (request.query) {
                     grpcRequest.query = request.query;
                 }
-                stream = this.client.catchUpSubscribeToStream(grpcRequest, this.credentials || new grpc.Metadata());
+                // Create metadata with token if cached, otherwise use basic auth
+                const metadata = new grpc.Metadata();
+                if (this.cachedToken) {
+                    metadata.add('x-auth-token', this.cachedToken);
+                    this.logger.debug('Using cached auth token for stream subscription');
+                }
+                else if (this.credentials) {
+                    metadata.add('authorization', this.credentials.get('authorization')[0]);
+                    this.logger.debug('Using basic auth for stream subscription');
+                }
+                stream = this.client.catchUpSubscribeToStream(grpcRequest, metadata);
             }
             else {
                 // Subscribe to all events - use plain object
@@ -388,7 +440,17 @@ class EventStoreClient {
                 if (request.query) {
                     grpcRequest.query = request.query;
                 }
-                stream = this.client.catchUpSubscribeToEvents(grpcRequest, this.credentials || new grpc.Metadata());
+                // Create metadata with token if cached, otherwise use basic auth
+                const metadata = new grpc.Metadata();
+                if (this.cachedToken) {
+                    metadata.add('x-auth-token', this.cachedToken);
+                    this.logger.debug('Using cached auth token for event subscription');
+                }
+                else if (this.credentials) {
+                    metadata.add('authorization', this.credentials.get('authorization')[0]);
+                    this.logger.debug('Using basic auth for event subscription');
+                }
+                stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
             }
         }
         catch (error) {
@@ -490,6 +552,37 @@ class EventStoreClient {
         }
     }
     /**
+     * Ping the server to check connectivity
+     * @returns Promise<void> Resolves if the server responds successfully
+     */
+    async ping() {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        this.logger.debug('Pinging server');
+        const pingAsync = (0, util_1.promisify)(this.client.ping.bind(this.client));
+        try {
+            // Create metadata with token if cached, otherwise use basic auth
+            const metadata = new grpc.Metadata();
+            if (this.cachedToken) {
+                metadata.add('x-auth-token', this.cachedToken);
+                this.logger.debug('Using cached auth token for ping');
+            }
+            else if (this.credentials) {
+                metadata.add('authorization', this.credentials.get('authorization')[0]);
+                this.logger.debug('Using basic auth for ping');
+            }
+            // Use empty request object for ping
+            await pingAsync({}, metadata);
+            this.logger.debug('Ping successful');
+        }
+        catch (error) {
+            this.logger.error('Ping failed:', error);
+            throw new Error(`Ping failed: ${error.message}`);
+        }
+    }
+    /**
      * Check if the client is connected to the server
      * @returns Promise<boolean> True if connected, false otherwise
      */
@@ -500,6 +593,8 @@ class EventStoreClient {
         }
         this.logger.debug('Performing health check');
         try {
+            // Use ping instead of getEvents for health check
+            await this.ping();
             // Try to make a simple call to test connectivity
             await this.getEvents({
                 boundary: 'orisun_admin',

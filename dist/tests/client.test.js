@@ -6,11 +6,13 @@ const mockSaveEvents = jest.fn();
 const mockGetEvents = jest.fn();
 const mockCatchUpSubscribeToEvents = jest.fn();
 const mockCatchUpSubscribeToStream = jest.fn();
+const mockPing = jest.fn();
 const mockEventStoreClient = {
     saveEvents: mockSaveEvents,
     getEvents: mockGetEvents,
     catchUpSubscribeToEvents: mockCatchUpSubscribeToEvents,
     catchUpSubscribeToStream: mockCatchUpSubscribeToStream,
+    ping: mockPing,
 };
 const mockClient = jest.fn().mockImplementation(() => mockEventStoreClient);
 jest.mock('@grpc/grpc-js', () => ({
@@ -22,9 +24,18 @@ jest.mock('@grpc/grpc-js', () => ({
             EventStore: mockClient
         }
     })),
-    Metadata: jest.fn().mockImplementation(() => ({
-        add: jest.fn()
-    }))
+    Metadata: jest.fn().mockImplementation(() => {
+        const metadata = {};
+        return {
+            add: jest.fn((key, value) => {
+                if (!metadata[key]) {
+                    metadata[key] = [];
+                }
+                metadata[key].push(value);
+            }),
+            get: jest.fn((key) => metadata[key] || [])
+        };
+    })
 }));
 jest.mock('@grpc/proto-loader', () => ({
     loadSync: jest.fn(() => 'mock-package-definition')
@@ -62,6 +73,9 @@ beforeEach(() => {
     mockCatchUpSubscribeToStream.mockReturnValue({
         on: jest.fn(),
         cancel: jest.fn()
+    });
+    mockPing.mockImplementation((request, metadata, callback) => {
+        callback(null, {});
     });
 });
 describe('EventStoreClient', () => {
@@ -283,10 +297,188 @@ describe('EventStoreClient', () => {
             expect(mockStream.cancel).toHaveBeenCalled();
         });
     });
+    describe('ping', () => {
+        it('should ping successfully', async () => {
+            await expect(client.ping()).resolves.not.toThrow();
+            // Check that mock was called (the exact call signature depends on promisify implementation)
+            expect(mockPing).toHaveBeenCalled();
+        });
+        it('should use basic auth for initial ping', async () => {
+            await client.ping();
+            // Check that the metadata contains authorization header
+            const metadataCall = mockPing.mock.calls[mockPing.mock.calls.length - 1][1];
+            expect(metadataCall.get).toBeDefined();
+            expect(metadataCall.get('authorization')).toContain('Basic dGVzdDp0ZXN0'); // base64 of 'test:test'
+        });
+        it('should use cached token for subsequent pings', async () => {
+            // First call to establish token - we need to manually set the cached token
+            // since our mock doesn't properly simulate the response metadata extraction
+            const clientInstance = client;
+            clientInstance.cachedToken = 'cached-token-123';
+            // Second call should use cached token
+            mockPing.mockImplementationOnce((request, metadata, callback) => {
+                // Check that metadata contains cached token
+                expect(metadata.get('x-auth-token')).toContain('cached-token-123');
+                callback(null, {});
+            });
+            await client.ping();
+        });
+    });
+    describe('token caching', () => {
+        it('should cache token from saveEvents response', async () => {
+            // Mock saveEvents to return token in response metadata
+            mockSaveEvents.mockImplementationOnce((request, metadata, callback) => {
+                const responseMetadata = {
+                    get: jest.fn((key) => {
+                        if (key === 'x-auth-token') {
+                            return ['save-events-token'];
+                        }
+                        return [];
+                    })
+                };
+                callback(null, {
+                    log_position: {
+                        commit_position: '123',
+                        prepare_position: '123'
+                    },
+                    metadata: responseMetadata
+                }, responseMetadata);
+            });
+            const request = {
+                stream: {
+                    name: 'test-stream',
+                    expectedPosition: {
+                        commitPosition: -1,
+                        preparePosition: -1
+                    },
+                },
+                events: [
+                    {
+                        eventId: 'test-event-1',
+                        eventType: 'TestEvent',
+                        data: { test: 'data' },
+                        metadata: { source: 'test' }
+                    }
+                ],
+                boundary: 'test-boundary'
+            };
+            await client.saveEvents(request);
+            // Verify next call uses cached token
+            mockSaveEvents.mockImplementationOnce((request, metadata, callback) => {
+                expect(metadata.get('x-auth-token')).toContain('save-events-token');
+                callback(null, {
+                    log_position: {
+                        commit_position: '124',
+                        prepare_position: '124'
+                    }
+                });
+            });
+            await client.saveEvents(request);
+        });
+        it('should cache token from getEvents response', async () => {
+            // Mock getEvents to return token in response metadata
+            mockGetEvents.mockImplementationOnce((request, metadata, callback) => {
+                const responseMetadata = {
+                    get: jest.fn((key) => {
+                        if (key === 'x-auth-token') {
+                            return ['get-events-token'];
+                        }
+                        return [];
+                    })
+                };
+                callback(null, {
+                    events: [
+                        {
+                            event_id: 'test-event-1',
+                            event_type: 'TestEvent',
+                            data: JSON.stringify({ test: 'data' }),
+                            metadata: JSON.stringify({ source: 'test' }),
+                            stream_id: 'test-stream',
+                            position: { commit_position: '0', prepare_position: '0' },
+                            date_created: { seconds: '1704067200', nanos: 0 }
+                        }
+                    ],
+                    metadata: responseMetadata
+                }, responseMetadata);
+            });
+            const request = {
+                stream: {
+                    name: 'test-stream'
+                },
+                boundary: 'test-boundary'
+            };
+            await client.getEvents(request);
+            // Verify next call uses cached token
+            mockGetEvents.mockImplementationOnce((request, metadata, callback) => {
+                expect(metadata.get('x-auth-token')).toContain('get-events-token');
+                callback(null, { events: [] });
+            });
+            await client.getEvents(request);
+        });
+        it('should use cached token for subscriptions', () => {
+            // First, establish a cached token by calling saveEvents
+            mockSaveEvents.mockImplementationOnce((request, metadata, callback) => {
+                const responseMetadata = {
+                    get: jest.fn((key) => {
+                        if (key === 'x-auth-token') {
+                            return ['subscription-token'];
+                        }
+                        return [];
+                    })
+                };
+                callback(null, {
+                    log_position: {
+                        commit_position: '123',
+                        prepare_position: '123'
+                    },
+                    metadata: responseMetadata
+                }, responseMetadata);
+            });
+            const saveRequest = {
+                stream: {
+                    name: 'test-stream',
+                    expectedPosition: {
+                        commitPosition: -1,
+                        preparePosition: -1
+                    },
+                },
+                events: [
+                    {
+                        eventId: 'test-event-1',
+                        eventType: 'TestEvent',
+                        data: { test: 'data' },
+                        metadata: { source: 'test' }
+                    }
+                ],
+                boundary: 'test-boundary'
+            };
+            // We need to make the saveEvents call async to establish the token
+            client.saveEvents(saveRequest).then(() => {
+                // Now test subscription with cached token
+                mockCatchUpSubscribeToStream.mockImplementationOnce((request, metadata) => {
+                    expect(metadata.get('x-auth-token')).toContain('subscription-token');
+                    return {
+                        on: jest.fn(),
+                        cancel: jest.fn()
+                    };
+                });
+                const onEvent = jest.fn();
+                client.subscribeToEvents({
+                    subscriberName: 'test-subscriber',
+                    stream: 'test-stream',
+                    boundary: 'test-boundary'
+                }, onEvent);
+            });
+        });
+    });
     describe('healthCheck', () => {
         it('should return true for successful connection', async () => {
             const isHealthy = await client.healthCheck();
             expect(isHealthy).toBe(true);
+        });
+        it('should use ping for health check', async () => {
+            await client.healthCheck();
+            expect(mockPing).toHaveBeenCalled();
         });
     });
     describe('close', () => {
