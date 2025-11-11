@@ -36,7 +36,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventStoreClient = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
-const util_1 = require("util");
 const path = __importStar(require("path"));
 /**
  * Validates client options and throws errors for invalid configurations
@@ -187,7 +186,6 @@ class EventStoreClient {
             }
         });
         this.logger.debug(`Saving ${request.events.length} events to stream '${request.stream.name}'`);
-        const saveEventsAsync = (0, util_1.promisify)(this.client.saveEvents.bind(this.client));
         // Try using plain object approach instead of generated protobuf classes
         const grpcRequest = {
             boundary: request.boundary,
@@ -217,19 +215,26 @@ class EventStoreClient {
                 metadata.add('authorization', this.credentials.get('authorization')[0]);
                 this.logger.debug('Using basic auth');
             }
-            const response = await saveEventsAsync(grpcRequest, metadata);
-            this.logger.info(`Successfully saved events to stream '${request.stream.name}'`);
-            // Extract token from response headers if present
-            if (response && typeof response === 'object' && 'metadata' in response) {
-                const responseMetadata = response.metadata;
-                if (responseMetadata) {
-                    const tokens = responseMetadata.get('x-auth-token');
-                    if (tokens && tokens.length > 0) {
-                        this.cachedToken = tokens[0];
-                        this.logger.debug('Cached auth token from response');
+            // Use callback-based API to access response headers
+            const response = await new Promise((resolve, reject) => {
+                this.client.saveEvents(grpcRequest, metadata, (error, response, responseMetadata) => {
+                    if (error) {
+                        reject(error);
+                        return;
                     }
-                }
-            }
+                    // Extract token from response headers if present
+                    if (responseMetadata) {
+                        const tokens = responseMetadata.get('x-auth-token');
+                        if (tokens && tokens.length > 0) {
+                            // Convert MetadataValue (Buffer) to string
+                            this.cachedToken = tokens[0].toString();
+                            this.logger.debug('Cached auth token from response');
+                        }
+                    }
+                    resolve(response);
+                });
+            });
+            this.logger.info(`Successfully saved events to stream '${request.stream.name}'`);
             // Transform the gRPC response to match our interface
             return {
                 logPosition: {
@@ -274,7 +279,6 @@ class EventStoreClient {
         }
         const streamInfo = request.stream ? `stream '${request.stream.name}'` : 'all streams';
         this.logger.debug(`Getting events from ${streamInfo}`);
-        const getEventsAsync = (0, util_1.promisify)(this.client.getEvents.bind(this.client));
         const countValue = request.count || 100;
         this.logger.debug(`Setting count to: ${countValue}`);
         // Use plain object instead of protobuf classes
@@ -309,7 +313,25 @@ class EventStoreClient {
                 metadata.add('authorization', this.credentials.get('authorization')[0]);
                 this.logger.debug('Using basic auth');
             }
-            const response = await getEventsAsync(grpcRequest, metadata);
+            // Use callback-based API to access response headers
+            const response = await new Promise((resolve, reject) => {
+                this.client.getEvents(grpcRequest, metadata, (error, response, responseMetadata) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    // Extract token from response headers if present
+                    if (responseMetadata) {
+                        const tokens = responseMetadata.get('x-auth-token');
+                        if (tokens && tokens.length > 0) {
+                            // Convert MetadataValue (Buffer) to string
+                            this.cachedToken = tokens[0].toString();
+                            this.logger.debug('Cached auth token from response');
+                        }
+                    }
+                    resolve(response);
+                });
+            });
             if (!response || !response.events || response.events.length === 0) {
                 this.logger.warn(`No events returned from ${streamInfo}`);
                 return [];
@@ -346,17 +368,6 @@ class EventStoreClient {
                     };
                 }
             });
-            // Extract token from response headers if present
-            if (response && typeof response === 'object' && 'metadata' in response) {
-                const responseMetadata = response.metadata;
-                if (responseMetadata) {
-                    const tokens = responseMetadata.get('x-auth-token');
-                    if (tokens && tokens.length > 0) {
-                        this.cachedToken = tokens[0];
-                        this.logger.debug('Cached auth token from response');
-                    }
-                }
-            }
             this.logger.debug(`Successfully retrieved ${events.length} events from ${streamInfo}`);
             return events;
         }
@@ -561,7 +572,6 @@ class EventStoreClient {
             throw new Error('Client has been disposed');
         }
         this.logger.debug('Pinging server');
-        const pingAsync = (0, util_1.promisify)(this.client.ping.bind(this.client));
         try {
             // Create metadata with token if cached, otherwise use basic auth
             const metadata = new grpc.Metadata();
@@ -573,8 +583,32 @@ class EventStoreClient {
                 metadata.add('authorization', this.credentials.get('authorization')[0]);
                 this.logger.debug('Using basic auth for ping');
             }
-            // Use empty request object for ping
-            await pingAsync({}, metadata);
+            // Use callback-based API to access response headers
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client.ping({}, metadata, (error, response) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    console.log('Ping response:', response);
+                    setTimeout(() => {
+                        resolve(response);
+                    }, 1000);
+                });
+                // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
+                call.on('metadata', (metadata) => {
+                    this.logger.debug('Response metadata:', metadata);
+                    // Extract token from response headers if present
+                    if (metadata) {
+                        const tokens = metadata.get('x-auth-token');
+                        if (tokens && tokens.length > 0) {
+                            // Convert MetadataValue (Buffer) to string
+                            this.cachedToken = tokens[0].toString();
+                            this.logger.debug('Cached auth token from response');
+                        }
+                    }
+                });
+            });
             this.logger.debug('Ping successful');
         }
         catch (error) {
