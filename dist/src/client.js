@@ -114,7 +114,7 @@ class EventStoreClient {
             // Standard host:port format
             targetString = `${host}:${port}`;
         }
-        this.client = new eventStoreProto.eventstore.EventStore(targetString, credentials, channelOptions);
+        this.client = new eventStoreProto.orisun.EventStore(targetString, credentials, channelOptions);
         // Set up authentication metadata
         this.credentials = new grpc.Metadata();
         const auth = Buffer.from(`${username}:${password}`).toString('base64');
