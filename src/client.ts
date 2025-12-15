@@ -253,7 +253,7 @@ export class EventStoreClient {
       targetString = `${host}:${port}`;
     }
 
-    this.client = new eventStoreProto.eventstore.EventStore(
+    this.client = new eventStoreProto.orisun.EventStore(
       targetString,
       credentials,
       channelOptions
