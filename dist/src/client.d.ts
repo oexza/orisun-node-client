@@ -4,7 +4,7 @@ export interface Event {
     eventId: string;
     eventType: string;
     data: any;
-    metadata?: Record<string, string>;
+    metadata?: Record<string, any>;
     streamId: string;
     position: Position;
     dateCreated: string;
@@ -13,7 +13,7 @@ export interface EventToSave {
     eventId: string;
     eventType: string;
     data: any;
-    metadata?: Record<string, string>;
+    metadata?: Record<string, any>;
 }
 export interface Position {
     commitPosition: number;
