@@ -23,7 +23,7 @@ jest.mock('@grpc/grpc-js', () => ({
     createInsecure: jest.fn(() => 'mock-credentials')
   },
   loadPackageDefinition: jest.fn(() => ({
-    eventstore: {
+    orisun: {
       EventStore: mockClient
     }
   })),

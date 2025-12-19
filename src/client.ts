@@ -803,7 +803,6 @@ export class EventStoreClient {
             reject(error);
             return;
           }
-          console.log('Ping response:', response);
 
           setTimeout(() => {
             resolve(response);
