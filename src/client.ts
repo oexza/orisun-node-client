@@ -496,7 +496,7 @@ export class EventStoreClient {
     }
 
     if (request.fromPosition) {
-      grpcRequest.fromPosition = {
+      grpcRequest.from_position = {
         commitPosition: request.fromPosition.commitPosition,
         preparePosition: request.fromPosition.preparePosition
       };
@@ -629,7 +629,7 @@ export class EventStoreClient {
           subscriber_name: request.subscriberName,
           boundary: request.boundary,
           stream: request.stream,
-          afterPosition: request.afterPosition ? {
+          after_position: request.afterPosition ? {
             commit_position: request.afterPosition.commitPosition,
             prepare_position: request.afterPosition.preparePosition
           } : null
@@ -650,7 +650,7 @@ export class EventStoreClient {
         };
 
         if (request.afterPosition) {
-          grpcRequest.afterPosition = {
+          grpcRequest.after_position = {
             commit_position: request.afterPosition.commitPosition,
             prepare_position: request.afterPosition.preparePosition
           };
