@@ -662,7 +662,7 @@ export class EventStoreClient {
 
         // Create metadata with authentication
         const metadata = this.createAuthMetadata('event subscription');
-        stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
+        stream = request.stream ? this.client.catchUpSubscribeToStream(grpcRequest, metadata) : this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
         this.setupTokenCaching(stream, 'event subscription response');
       }
     } catch (error) {
