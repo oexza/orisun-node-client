@@ -29,8 +29,7 @@ async function testTokenCaching() {
 
     console.log('3️⃣  Testing saveEvents (should use cached token)...');
     const saveRequest = {
-      stream: {
-        name: 'test-token-caching-stream',
+      query: {
         expectedPosition: {
           commitPosition: -1,
           preparePosition: -1
