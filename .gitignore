@@ -6,3 +6,5 @@ build/
 *.tsbuildinfo
 coverage/
 .nyc_output/
+
+.idea
