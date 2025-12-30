@@ -61,10 +61,14 @@ function validateClientOptions(options) {
  * Default no-op logger that doesn't log anything
  */
 class NoopLogger {
-    debug(message, ...args) { }
-    info(message, ...args) { }
-    warn(message, ...args) { }
-    error(message, ...args) { }
+    debug(message, ...args) {
+    }
+    info(message, ...args) {
+    }
+    warn(message, ...args) {
+    }
+    error(message, ...args) {
+    }
 }
 /**
  * orisun client operations
@@ -121,10 +125,14 @@ class EventStoreClient {
         this.credentials.add('authorization', `Basic ${auth}`);
         // Set up logger
         this.logger = options.logger || {
-            debug: () => { },
-            info: () => { },
-            warn: () => { },
-            error: () => { }
+            debug: () => {
+            },
+            info: () => {
+            },
+            warn: () => {
+            },
+            error: () => {
+            }
         };
         if (options.enableLogging) {
             this.logger.info('EventStoreClient initialized');
@@ -209,9 +217,6 @@ class EventStoreClient {
         if (!request.boundary) {
             throw new Error('Boundary is required');
         }
-        if (!request.stream || !request.stream.name) {
-            throw new Error('Stream name is required');
-        }
         if (!request.events || !Array.isArray(request.events) || request.events.length === 0) {
             throw new Error('At least one event is required');
         }
@@ -227,17 +232,16 @@ class EventStoreClient {
                 throw new Error(`Event at index ${index} is missing data`);
             }
         });
-        this.logger.debug(`Saving ${request.events.length} events to stream '${request.stream.name}'`);
+        this.logger.debug(`Saving ${request.events.length} events`);
         // Try using plain object approach instead of generated protobuf classes
         const grpcRequest = {
             boundary: request.boundary,
-            stream: {
-                name: request.stream.name,
-                expected_position: request.stream.expectedPosition ? {
-                    commit_position: request.stream.expectedPosition.commitPosition,
-                    prepare_position: request.stream.expectedPosition.preparePosition
+            query: {
+                expected_position: request.query.expectedPosition ? {
+                    commit_position: request.query.expectedPosition.commitPosition,
+                    prepare_position: request.query.expectedPosition.preparePosition
                 } : null,
-                ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
+                ...(request.query.subsetQuery && { subsetQuery: request.query.subsetQuery })
             },
             events: request.events.map(event => ({
                 event_id: event.eventId,
@@ -261,7 +265,7 @@ class EventStoreClient {
                 // Set up token caching from response metadata
                 this.setupTokenCaching(call, 'save events response');
             });
-            this.logger.info(`Successfully saved events to stream '${request.stream.name}'`);
+            this.logger.info(`Successfully saved events`);
             // Transform the gRPC response to match our interface
             return {
                 logPosition: {
@@ -271,12 +275,11 @@ class EventStoreClient {
             };
         }
         catch (error) {
-            this.logger.error(`Failed to save events to stream '${request.stream.name}':`, error);
+            this.logger.error(`Failed to save events: `, error);
             // Enhance error with context
-            const enhancedError = new Error(`Failed to save events to stream '${request.stream.name}': ${error.message}`);
+            const enhancedError = new Error(`Failed to save events to stream: ${error.message}`);
             enhancedError.stack = error.stack;
             enhancedError.originalError = error;
-            enhancedError.streamName = request.stream.name;
             enhancedError.eventCount = request.events.length;
             throw enhancedError;
         }
@@ -296,16 +299,10 @@ class EventStoreClient {
         if (!request.boundary) {
             throw new Error('Boundary is required');
         }
-        // If stream is specified, validate stream name
-        if (request.stream && !request.stream.name) {
-            throw new Error('Stream name is required when stream is specified');
-        }
         // Validate count if provided
         if (request.count !== undefined && request.count <= 0) {
             throw new Error('Count must be greater than 0');
         }
-        const streamInfo = request.stream ? `stream '${request.stream.name}'` : 'all streams';
-        this.logger.debug(`Getting events from ${streamInfo}`);
         const countValue = request.count || 100;
         this.logger.debug(`Setting count to: ${countValue}`);
         // Use plain object instead of protobuf classes
@@ -318,17 +315,12 @@ class EventStoreClient {
             grpcRequest.query = request.query;
         }
         if (request.fromPosition) {
-            grpcRequest.fromPosition = {
+            grpcRequest.from_position = {
                 commitPosition: request.fromPosition.commitPosition,
                 preparePosition: request.fromPosition.preparePosition
             };
         }
-        if (request.stream) {
-            grpcRequest.stream = {
-                name: request.stream.name,
-            };
-        }
-        this.logger.debug(`Getting events from ${streamInfo} with count: ${countValue}`);
+        this.logger.debug(`Getting events with count: ${countValue}`);
         try {
             // Create metadata with authentication
             const metadata = this.createAuthMetadata('get events');
@@ -345,7 +337,7 @@ class EventStoreClient {
                 this.setupTokenCaching(call, 'get events response');
             });
             if (!response || !response.events || response.events.length === 0) {
-                this.logger.warn(`No events returned from ${streamInfo}`);
+                this.logger.warn(`No events returned`);
                 return [];
             }
             const events = response.events.map((event) => {
@@ -355,7 +347,6 @@ class EventStoreClient {
                         eventType: event.event_type,
                         data: JSON.parse(event.data),
                         metadata: JSON.parse(event.metadata || '{}'),
-                        streamId: event.stream_id,
                         position: {
                             commitPosition: Number(event.position?.commit_position || '0'),
                             preparePosition: Number(event.position?.prepare_position || '0')
@@ -371,7 +362,6 @@ class EventStoreClient {
                         eventType: event.event_type,
                         data: event.data, // Raw string
                         metadata: event.metadata || '{}', // Raw string
-                        streamId: event.stream_id,
                         position: {
                             commitPosition: Number(event.position?.commit_position || '0'),
                             preparePosition: Number(event.position?.prepare_position || '0')
@@ -380,16 +370,15 @@ class EventStoreClient {
                     };
                 }
             });
-            this.logger.debug(`Successfully retrieved ${events.length} events from ${streamInfo}`);
+            this.logger.debug(`Successfully retrieved ${events.length} events`);
             return events;
         }
         catch (error) {
-            this.logger.error(`Failed to get events from ${streamInfo}:`, error);
+            this.logger.error(`Failed to get events:`, error);
             // Enhance error with context
-            const enhancedError = new Error(`Failed to get events from ${streamInfo}: ${error.message}`);
+            const enhancedError = new Error(`Failed to get events: ${error.message}`);
             enhancedError.stack = error.stack;
             enhancedError.originalError = error;
-            enhancedError.streamName = request.stream?.name;
             enhancedError.boundary = request.boundary;
             throw enhancedError;
         }
@@ -418,60 +407,38 @@ class EventStoreClient {
         if (!onEvent || typeof onEvent !== 'function') {
             throw new Error('Event handler function is required');
         }
-        const streamInfo = request.stream ? `stream '${request.stream}'` : 'all streams';
-        this.logger.debug(`Subscribing to ${streamInfo} with subscriber '${request.subscriberName}' (async)`);
+        this.logger.debug(`Subscribing with subscriber '${request.subscriberName}' (async)`);
         let stream;
         try {
-            if (request.stream) {
-                // Subscribe to a specific stream - use plain object
-                const grpcRequest = {
-                    subscriber_name: request.subscriberName,
-                    boundary: request.boundary,
-                    stream: request.stream,
-                    afterPosition: request.afterPosition ? {
-                        commit_position: request.afterPosition.commitPosition,
-                        prepare_position: request.afterPosition.preparePosition
-                    } : null
+            // Subscribe to all events - use plain object
+            const grpcRequest = {
+                subscriber_name: request.subscriberName,
+                boundary: request.boundary,
+            };
+            if (request.afterPosition) {
+                grpcRequest.after_position = {
+                    commit_position: request.afterPosition.commitPosition,
+                    prepare_position: request.afterPosition.preparePosition
                 };
-                if (request.query) {
-                    grpcRequest.query = request.query;
-                }
-                // Create metadata with authentication
-                const metadata = this.createAuthMetadata('stream subscription');
-                stream = this.client.catchUpSubscribeToStream(grpcRequest, metadata);
             }
-            else {
-                // Subscribe to all events - use plain object
-                const grpcRequest = {
-                    subscriber_name: request.subscriberName,
-                    boundary: request.boundary,
-                };
-                if (request.afterPosition) {
-                    grpcRequest.afterPosition = {
-                        commit_position: request.afterPosition.commitPosition,
-                        prepare_position: request.afterPosition.preparePosition
-                    };
-                }
-                if (request.query) {
-                    grpcRequest.query = request.query;
-                }
-                // Create metadata with authentication
-                const metadata = this.createAuthMetadata('event subscription');
-                stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
-                this.setupTokenCaching(stream, 'event subscription response');
+            if (request.query) {
+                grpcRequest.query = request.query;
             }
+            // Create metadata with authentication
+            const metadata = this.createAuthMetadata('event subscription');
+            stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
+            this.setupTokenCaching(stream, 'event subscription response');
         }
         catch (error) {
-            this.logger.error(`Failed to create subscription to ${streamInfo}:`, error);
+            this.logger.error(`Failed to create subscription: `, error);
             // Enhance error with context
-            const enhancedError = new Error(`Failed to create subscription to ${streamInfo}: ${error.message}`);
+            const enhancedError = new Error(`Failed to create subscription: ${error.message}`);
             enhancedError.stack = error.stack;
             enhancedError.originalError = error;
-            enhancedError.streamName = request.stream;
             enhancedError.subscriberName = request.subscriberName;
             throw enhancedError;
         }
-        this.logger.debug(`Successfully subscribed to ${streamInfo} (async)`);
+        this.logger.debug(`Successfully subscribed to eventstore (async)`);
         // Start async iteration in background
         (async () => {
             try {
@@ -483,7 +450,6 @@ class EventStoreClient {
                             eventType: event.event_type,
                             data: JSON.parse(event.data),
                             metadata: JSON.parse(event.metadata || '{}'),
-                            streamId: event.stream_id,
                             position: {
                                 commitPosition: Number(event.position?.commit_position || '0'),
                                 preparePosition: Number(event.position?.prepare_position || '0')
@@ -509,15 +475,14 @@ class EventStoreClient {
                         }
                     }
                 }
-                this.logger.debug(`Subscription to ${streamInfo} ended (async)`);
+                this.logger.debug(`Subscription ended (async)`);
             }
             catch (error) {
-                this.logger.error(`Subscription error for ${streamInfo}:`, error);
+                this.logger.error(`Subscription error:`, error);
                 // Enhance error with context
-                const enhancedError = new Error(`Subscription error for ${streamInfo}: ${error.message}`);
+                const enhancedError = new Error(`Subscription error: ${error.message}`);
                 enhancedError.stack = error.stack;
                 enhancedError.originalError = error;
-                enhancedError.streamName = request.stream;
                 enhancedError.subscriberName = request.subscriberName;
                 if (onError) {
                     onError(enhancedError);
@@ -579,7 +544,6 @@ class EventStoreClient {
                         reject(error);
                         return;
                     }
-                    console.log('Ping response:', response);
                     setTimeout(() => {
                         resolve(response);
                     }, 1000);
@@ -610,7 +574,7 @@ class EventStoreClient {
             // Try to make a simple call to test connectivity
             await this.getEvents({
                 boundary: 'orisun_admin',
-                stream: { name: 'health-check' }
+                count: 1
             });
             this.logger.debug('Health check successful');
             return true;

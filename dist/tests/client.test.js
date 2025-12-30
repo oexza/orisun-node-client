@@ -39,13 +39,11 @@ const grpc = __importStar(require("@grpc/grpc-js"));
 const mockSaveEvents = jest.fn();
 const mockGetEvents = jest.fn();
 const mockCatchUpSubscribeToEvents = jest.fn();
-const mockCatchUpSubscribeToStream = jest.fn();
 const mockPing = jest.fn();
 const mockEventStoreClient = {
     saveEvents: mockSaveEvents,
     getEvents: mockGetEvents,
     catchUpSubscribeToEvents: mockCatchUpSubscribeToEvents,
-    catchUpSubscribeToStream: mockCatchUpSubscribeToStream,
     ping: mockPing,
 };
 const mockClient = jest.fn().mockImplementation(() => mockEventStoreClient);
@@ -54,7 +52,7 @@ jest.mock('@grpc/grpc-js', () => ({
         createInsecure: jest.fn(() => 'mock-credentials')
     },
     loadPackageDefinition: jest.fn(() => ({
-        eventstore: {
+        orisun: {
             EventStore: mockClient
         }
     })),
@@ -120,7 +118,7 @@ beforeEach(() => {
         on: jest.fn(),
         cancel: jest.fn()
     });
-    mockCatchUpSubscribeToStream.mockReturnValue({
+    mockCatchUpSubscribeToEvents.mockReturnValue({
         on: jest.fn(),
         cancel: jest.fn()
     });
@@ -205,8 +203,7 @@ describe('EventStoreClient', () => {
     describe('saveEvents', () => {
         it('should save events successfully', async () => {
             const request = {
-                stream: {
-                    name: 'test-stream',
+                query: {
                     expectedPosition: {
                         commitPosition: -1,
                         preparePosition: -1
@@ -230,8 +227,7 @@ describe('EventStoreClient', () => {
         });
         it('should save events with subsetQuery successfully', async () => {
             const request = {
-                stream: {
-                    name: 'test-stream',
+                query: {
                     expectedPosition: firstSaveResponse.logPosition,
                     subsetQuery: {
                         criteria: [
@@ -260,8 +256,8 @@ describe('EventStoreClient', () => {
             expect(result.logPosition.preparePosition).toBe(123);
             // Verify that the mock was called with the correct subsetQuery field
             expect(mockSaveEvents).toHaveBeenLastCalledWith(expect.objectContaining({
-                stream: expect.objectContaining({
-                    subsetQuery: request.stream.subsetQuery
+                query: expect.objectContaining({
+                    subsetQuery: request.query.subsetQuery
                 })
             }), expect.any(Object), expect.any(Function));
         });
@@ -281,7 +277,6 @@ describe('EventStoreClient', () => {
                 eventType: 'TestEvent',
                 data: { test: 'data' },
                 metadata: { source: 'test' },
-                streamId: 'test-stream',
                 position: {
                     commitPosition: 0,
                     preparePosition: 0
@@ -315,7 +310,6 @@ describe('EventStoreClient', () => {
             const onError = jest.fn();
             const subscription = client.subscribeToEvents({
                 subscriberName: 'test-subscriber',
-                stream: 'test-stream',
                 boundary: 'test-boundary'
             }, onEvent, onError);
             expect(subscription).toBeDefined();
@@ -343,11 +337,10 @@ describe('EventStoreClient', () => {
                 on: jest.fn(),
                 cancel: jest.fn()
             };
-            mockCatchUpSubscribeToStream.mockReturnValue(mockStream);
+            mockCatchUpSubscribeToEvents.mockReturnValue(mockStream);
             const onEvent = jest.fn();
             const subscription = client.subscribeToEvents({
                 subscriberName: 'test-subscriber',
-                stream: 'test-stream',
                 boundary: 'test-boundary'
             }, onEvent);
             expect(subscription.cancel).toBeDefined();
@@ -424,8 +417,7 @@ describe('EventStoreClient', () => {
                 return mockCall;
             });
             const request = {
-                stream: {
-                    name: 'test-stream',
+                query: {
                     expectedPosition: {
                         commitPosition: -1,
                         preparePosition: -1
@@ -481,7 +473,6 @@ describe('EventStoreClient', () => {
                             event_type: 'TestEvent',
                             data: JSON.stringify({ test: 'data' }),
                             metadata: JSON.stringify({ source: 'test' }),
-                            stream_id: 'test-stream',
                             position: { commit_position: '0', prepare_position: '0' },
                             date_created: { seconds: '1704067200', nanos: 0 }
                         }
@@ -490,9 +481,6 @@ describe('EventStoreClient', () => {
                 return mockCall;
             });
             const request = {
-                stream: {
-                    name: 'test-stream'
-                },
                 boundary: 'test-boundary'
             };
             await client.getEvents(request);
@@ -532,8 +520,7 @@ describe('EventStoreClient', () => {
                 return mockCall;
             });
             const saveRequest = {
-                stream: {
-                    name: 'test-stream',
+                query: {
                     expectedPosition: {
                         commitPosition: -1,
                         preparePosition: -1
@@ -552,7 +539,7 @@ describe('EventStoreClient', () => {
             // Make the saveEvents call to establish the token
             await client.saveEvents(saveRequest);
             // Now test subscription with cached token
-            mockCatchUpSubscribeToStream.mockImplementationOnce((request, metadata) => {
+            mockCatchUpSubscribeToEvents.mockImplementationOnce((request, metadata) => {
                 expect(metadata.get('x-auth-token')).toContain('subscription-token');
                 return {
                     on: jest.fn(),
@@ -562,7 +549,6 @@ describe('EventStoreClient', () => {
             const onEvent = jest.fn();
             client.subscribeToEvents({
                 subscriberName: 'test-subscriber',
-                stream: 'test-stream',
                 boundary: 'test-boundary'
             }, onEvent);
         });

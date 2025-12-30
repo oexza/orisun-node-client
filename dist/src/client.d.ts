@@ -1,11 +1,9 @@
 import * as grpc from '@grpc/grpc-js';
-import * as pb from './generated/eventstore_pb';
 export interface Event {
     eventId: string;
     eventType: string;
     data: any;
     metadata?: Record<string, any>;
-    streamId: string;
     position: Position;
     dateCreated: string;
 }
@@ -31,8 +29,7 @@ export interface Query {
 }
 export interface SaveEventsRequest {
     boundary: string;
-    stream: {
-        name: string;
+    query: {
         expectedPosition: Position;
         subsetQuery?: Query;
     };
@@ -44,30 +41,16 @@ export interface GetEventsRequest {
     count?: number;
     direction?: 'ASC' | 'DESC';
     boundary: string;
-    stream?: {
-        name: string;
-    };
 }
 export interface SubscribeRequest {
     afterPosition?: Position;
     query?: Query;
     subscriberName: string;
     boundary: string;
-    stream?: string;
 }
 export interface WriteResult {
     logPosition: Position;
 }
-export type PbEvent = pb.Event;
-export type PbEventToSave = pb.EventToSave;
-export type PbPosition = pb.Position;
-export type PbSaveEventsRequest = pb.SaveEventsRequest;
-export type PbGetEventsRequest = pb.GetEventsRequest;
-export type PbWriteResult = pb.WriteResult;
-export type PbSaveStreamQuery = pb.SaveStreamQuery;
-export type PbCatchUpSubscribeToStreamRequest = pb.CatchUpSubscribeToStreamRequest;
-export type PbCatchUpSubscribeToEventStoreRequest = pb.CatchUpSubscribeToEventStoreRequest;
-export type PbGetEventsResponse = pb.GetEventsResponse;
 /**
  * Logger interface for client logging
  */
