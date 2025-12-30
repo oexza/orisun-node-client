@@ -1,151 +1,131 @@
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { promisify } from 'util';
+import {promisify} from 'util';
 import * as path from 'path';
 import * as pb from './generated/eventstore_pb';
 
 // Client-friendly interfaces that match the expected API
 export interface Event {
-  eventId: string;
-  eventType: string;
-  data: any;
-  metadata?: Record<string, any>;
-  streamId: string;
-  position: Position;
-  dateCreated: string;
+    eventId: string;
+    eventType: string;
+    data: any;
+    metadata?: Record<string, any>;
+    position: Position;
+    dateCreated: string;
 }
 
 export interface EventToSave {
-  eventId: string;
-  eventType: string;
-  data: any;
-  metadata?: Record<string, any>;
+    eventId: string;
+    eventType: string;
+    data: any;
+    metadata?: Record<string, any>;
 }
 
 export interface Position {
-  commitPosition: number;
-  preparePosition: number;
+    commitPosition: number;
+    preparePosition: number;
 }
 
 export interface Tag {
-  key: string;
-  value: string;
+    key: string;
+    value: string;
 }
 
 export interface Criterion {
-  tags: Tag[];
+    tags: Tag[];
 }
 
 export interface Query {
-  criteria: Criterion[];
+    criteria: Criterion[];
 }
 
 export interface SaveEventsRequest {
-  boundary: string;
-  stream: {
-    name: string;
-    expectedPosition: Position;
-    subsetQuery?: Query;
-  };
-  events: EventToSave[];
+    boundary: string;
+    query: {
+        expectedPosition: Position;
+        subsetQuery?: Query;
+    };
+    events: EventToSave[];
 }
 
 export interface GetEventsRequest {
-  query?: Query;
-  fromPosition?: Position;
-  count?: number;
-  direction?: 'ASC' | 'DESC';
-  boundary: string;
-  stream?: {
-    name: string;
-  };
+    query?: Query;
+    fromPosition?: Position;
+    count?: number;
+    direction?: 'ASC' | 'DESC';
+    boundary: string;
 }
 
 export interface SubscribeRequest {
-  afterPosition?: Position;
-  query?: Query;
-  subscriberName: string;
-  boundary: string;
-  stream?: string;
+    afterPosition?: Position;
+    query?: Query;
+    subscriberName: string;
+    boundary: string;
 }
 
 export interface WriteResult {
-  logPosition: Position;
+    logPosition: Position;
 }
-
-// Re-export generated protobuf types for internal use
-export type PbEvent = pb.Event;
-export type PbEventToSave = pb.EventToSave;
-export type PbPosition = pb.Position;
-export type PbSaveEventsRequest = pb.SaveEventsRequest;
-export type PbGetEventsRequest = pb.GetEventsRequest;
-export type PbWriteResult = pb.WriteResult;
-export type PbSaveStreamQuery = pb.SaveStreamQuery;
-export type PbCatchUpSubscribeToStreamRequest = pb.CatchUpSubscribeToStreamRequest;
-export type PbCatchUpSubscribeToEventStoreRequest = pb.CatchUpSubscribeToEventStoreRequest;
-export type PbGetEventsResponse = pb.GetEventsResponse;
-
-
-
-
 
 /**
  * Logger interface for client logging
  */
 export interface Logger {
-  debug(message: string, ...args: any[]): void;
-  info(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  error(message: string, ...args: any[]): void;
+    debug(message: string, ...args: any[]): void;
+
+    info(message: string, ...args: any[]): void;
+
+    warn(message: string, ...args: any[]): void;
+
+    error(message: string, ...args: any[]): void;
 }
 
 
-
 export interface EventStoreClientOptions {
-  /**
-   * Server hostname or DNS name. Can be a comma-separated list of hosts for load balancing.
-   * If using DNS-based load balancing, provide a single DNS name that resolves to multiple IPs.
-   */
-  host?: string;
-  /**
-   * Server port. Required when using a single host or comma-separated hosts.
-   * Not required when using a target string.
-   */
-  port?: number;
-  /**
-   * Alternative to host:port. A fully qualified gRPC target string in the format:
-   * dns:[//authority/]host[:port] or ipv4:host:port or ipv6:[host]:port
-   * Examples: "dns:///eventstore.example.com:5005", "ipv4:10.0.0.10:5005"
-   * When provided, this takes precedence over host and port.
-   */
-  target?: string;
-  /**
-   * gRPC credentials for secure connections
-   */
-  credentials?: grpc.ChannelCredentials;
-  /**
-   * Authentication username
-   */
-  username?: string;
-  /**
-   * Authentication password
-   */
-  password?: string;
-  /**
-   * Load balancing policy to use. Options: 'round_robin', 'pick_first'
-   * - round_robin: Distributes requests across all available servers
-   * - pick_first: Connects to the first available server
-   */
-  loadBalancingPolicy?: 'round_robin' | 'pick_first';
+    /**
+     * Server hostname or DNS name. Can be a comma-separated list of hosts for load balancing.
+     * If using DNS-based load balancing, provide a single DNS name that resolves to multiple IPs.
+     */
+    host?: string;
+    /**
+     * Server port. Required when using a single host or comma-separated hosts.
+     * Not required when using a target string.
+     */
+    port?: number;
+    /**
+     * Alternative to host:port. A fully qualified gRPC target string in the format:
+     * dns:[//authority/]host[:port] or ipv4:host:port or ipv6:[host]:port
+     * Examples: "dns:///eventstore.example.com:5005", "ipv4:10.0.0.10:5005"
+     * When provided, this takes precedence over host and port.
+     */
+    target?: string;
+    /**
+     * gRPC credentials for secure connections
+     */
+    credentials?: grpc.ChannelCredentials;
+    /**
+     * Authentication username
+     */
+    username?: string;
+    /**
+     * Authentication password
+     */
+    password?: string;
+    /**
+     * Load balancing policy to use. Options: 'round_robin', 'pick_first'
+     * - round_robin: Distributes requests across all available servers
+     * - pick_first: Connects to the first available server
+     */
+    loadBalancingPolicy?: 'round_robin' | 'pick_first';
 
-  /**
-   * Custom logger implementation
-   */
-  logger?: Logger;
-  /**
-   * Enable or disable logging
-   */
-  enableLogging?: boolean;
+    /**
+     * Custom logger implementation
+     */
+    logger?: Logger;
+    /**
+     * Enable or disable logging
+     */
+    enableLogging?: boolean;
 
 }
 
@@ -153,701 +133,665 @@ export interface EventStoreClientOptions {
  * Validates client options and throws errors for invalid configurations
  */
 function validateClientOptions(options: EventStoreClientOptions): void {
-  // Validate connection options
-  if (!options.target && !options.host) {
-    throw new Error('Either host or target must be provided');
-  }
+    // Validate connection options
+    if (!options.target && !options.host) {
+        throw new Error('Either host or target must be provided');
+    }
 
-  if (options.host && !options.target && !options.port) {
-    throw new Error('Port must be provided when using host without target');
-  }
+    if (options.host && !options.target && !options.port) {
+        throw new Error('Port must be provided when using host without target');
+    }
 
-  if (options.port && (options.port < 1 || options.port > 65535)) {
-    throw new Error('Port must be between 1 and 65535');
-  }
+    if (options.port && (options.port < 1 || options.port > 65535)) {
+        throw new Error('Port must be between 1 and 65535');
+    }
 
-  // Validate load balancing policy
-  if (options.loadBalancingPolicy &&
-    !['round_robin', 'pick_first'].includes(options.loadBalancingPolicy)) {
-    throw new Error('loadBalancingPolicy must be either "round_robin" or "pick_first"');
-  }
+    // Validate load balancing policy
+    if (options.loadBalancingPolicy &&
+        !['round_robin', 'pick_first'].includes(options.loadBalancingPolicy)) {
+        throw new Error('loadBalancingPolicy must be either "round_robin" or "pick_first"');
+    }
 }
 
 /**
  * Default no-op logger that doesn't log anything
  */
 class NoopLogger implements Logger {
-  debug(message: string, ...args: any[]): void { }
-  info(message: string, ...args: any[]): void { }
-  warn(message: string, ...args: any[]): void { }
-  error(message: string, ...args: any[]): void { }
+    debug(message: string, ...args: any[]): void {
+    }
+
+    info(message: string, ...args: any[]): void {
+    }
+
+    warn(message: string, ...args: any[]): void {
+    }
+
+    error(message: string, ...args: any[]): void {
+    }
 }
 
 /**
  * orisun client operations
  */
 export class EventStoreClient {
-  private client: any;
-  private channel!: grpc.Channel;
-  private logger: Logger;
-  private credentials?: grpc.Metadata;
-  private disposed: boolean = false;
-  private cachedToken?: string;
+    private client: any;
+    private channel!: grpc.Channel;
+    private logger: Logger;
+    private credentials?: grpc.Metadata;
+    private disposed: boolean = false;
+    private cachedToken?: string;
 
-  constructor(options: EventStoreClientOptions = {}) {
-    // Validate options
-    validateClientOptions(options);
+    constructor(options: EventStoreClientOptions = {}) {
+        // Validate options
+        validateClientOptions(options);
 
-    const {
-      host = 'localhost',
-      port = 5005,
-      target,
-      credentials = grpc.credentials.createInsecure(),
-      username = 'admin',
-      password = 'changeit',
-      loadBalancingPolicy = 'round_robin',
-      logger,
-      enableLogging = false
-    } = options;
+        const {
+            host = 'localhost',
+            port = 5005,
+            target,
+            credentials = grpc.credentials.createInsecure(),
+            username = 'admin',
+            password = 'changeit',
+            loadBalancingPolicy = 'round_robin',
+            logger,
+            enableLogging = false
+        } = options;
 
-    // Initialize logger
-    this.logger = enableLogging ? (logger || console) : new NoopLogger();
+        // Initialize logger
+        this.logger = enableLogging ? (logger || console) : new NoopLogger();
 
-    // Load the protobuf definition
-    const PROTO_PATH = path.join(__dirname, '../eventstore.proto');
-    const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-      keepCase: true,
-      longs: String,
-      enums: String,
-      defaults: true,
-      oneofs: true,
-    });
-
-    const eventStoreProto = grpc.loadPackageDefinition(packageDefinition) as any;
-
-    // Create the client with keep-alive options and load balancing
-    const channelOptions = {
-      // 'grpc.keepalive_time_ms': keepaliveTimeMs,
-      // 'grpc.keepalive_timeout_ms': keepaliveTimeoutMs,
-      // 'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
-      // 'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
-      // 'grpc.http2.max_pings_without_data': 0,
-      'grpc.lb_policy_name': loadBalancingPolicy,
-      'grpc.service_config': JSON.stringify({
-        loadBalancingConfig: [{ [loadBalancingPolicy]: {} }]
-      })
-    };
-
-    // Determine the target string
-    let targetString: string;
-
-    if (target) {
-      // Use the provided target string directly
-      targetString = target;
-    } else if (host.includes(',')) {
-      // Handle comma-separated list of hosts for manual load balancing
-      const hosts = host.split(',').map(h => h.trim());
-      targetString = hosts.map(h => `${h}:${port}`).join(',');
-    } else {
-      // Standard host:port format
-      targetString = `${host}:${port}`;
-    }
-
-    this.client = new eventStoreProto.orisun.EventStore(
-      targetString,
-      credentials,
-      channelOptions
-    );
-
-    // Set up authentication metadata
-    this.credentials = new grpc.Metadata();
-    const auth = Buffer.from(`${username}:${password}`).toString('base64');
-    this.credentials.add('authorization', `Basic ${auth}`);
-
-    // Set up logger
-    this.logger = options.logger || {
-      debug: () => { },
-      info: () => { },
-      warn: () => { },
-      error: () => { }
-    };
-
-    if (options.enableLogging) {
-      this.logger.info('EventStoreClient initialized');
-    }
-
-    // Perform mandatory health check immediately after connection
-    // Use setImmediate to perform health check after constructor completes
-    setImmediate(async () => {
-      // Skip health check if client has been disposed
-      if (this.disposed) {
-        return;
-      }
-
-      // Skip health check during testing
-      if (process.env.NODE_ENV === 'test') {
-        this.logger.info('Skipping health check during testing');
-        return;
-      }
-
-      try {
-        const isHealthy = await this.healthCheck();
-        if (!isHealthy) {
-          const error = new Error('EventStore connection health check failed');
-          this.logger.error('Initial health check failed:', error);
-          throw error;
-        }
-        this.logger.info('Initial health check passed - connection established');
-      } catch (error) {
-        this.logger.error('Initial health check error:', error);
-        throw error;
-      }
-    });
-  }
-
-  /**
-   * Create metadata with authentication token or basic auth
-   * @param operation Optional description of the operation for logging
-   * @returns gRPC Metadata with authentication headers
-   */
-  private createAuthMetadata(operation?: string): grpc.Metadata {
-    const metadata = new grpc.Metadata();
-    if (this.cachedToken) {
-      metadata.add('x-auth-token', this.cachedToken);
-      this.logger.debug(`Using cached auth token${operation ? ` for ${operation}` : ''}`);
-    }
-    if (this.credentials) {
-      metadata.add('authorization', this.credentials.get('authorization')[0]);
-      this.logger.debug(`Using basic auth${operation ? ` for ${operation}` : ''}`);
-    }
-    return metadata;
-  }
-
-  /**
-   * Set up metadata event listener to cache authentication tokens from response
-   * @param call The gRPC call object
-   * @param operation Optional description of the operation for logging
-   */
-  private setupTokenCaching(call: any, operation?: string): void {
-    // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
-    call.on('metadata', (metadata: grpc.Metadata) => {
-      this.logger.debug('Response metadata:', metadata);
-
-      // Extract token from response headers if present
-      if (metadata) {
-        const tokens = metadata.get('x-auth-token');
-        if (tokens && tokens.length > 0) {
-          // Convert MetadataValue (Buffer) to string
-          this.cachedToken = tokens[0].toString();
-          this.logger.debug(`Cached auth token from ${operation || 'response'}`);
-        }
-      }
-    });
-  }
-
-  /**
-   * Save events to a stream
-   * @throws {Error} If the request is invalid or the operation fails
-   * @returns {Promise<WriteResult>} The write result containing the log position
-   */
-  async saveEvents(request: SaveEventsRequest): Promise<WriteResult> {
-    // Check if client is disposed
-    if (this.disposed) {
-      throw new Error('Client has been disposed');
-    }
-
-    if (!request) {
-      throw new Error('SaveEventsRequest cannot be null or undefined');
-    }
-
-    if (!request.boundary) {
-      throw new Error('Boundary is required');
-    }
-
-    if (!request.stream || !request.stream.name) {
-      throw new Error('Stream name is required');
-    }
-
-    if (!request.events || !Array.isArray(request.events) || request.events.length === 0) {
-      throw new Error('At least one event is required');
-    }
-
-    // Validate each event
-    request.events.forEach((event, index) => {
-      if (!event.eventId) {
-        throw new Error(`Event at index ${index} is missing eventId`);
-      }
-      if (!event.eventType) {
-        throw new Error(`Event at index ${index} is missing eventType`);
-      }
-      if (event.data === undefined || event.data === null) {
-        throw new Error(`Event at index ${index} is missing data`);
-      }
-    });
-
-    this.logger.debug(`Saving ${request.events.length} events to stream '${request.stream.name}'`);
-
-    // Try using plain object approach instead of generated protobuf classes
-    const grpcRequest = {
-      boundary: request.boundary,
-      stream: {
-        name: request.stream.name,
-        expected_position: request.stream.expectedPosition ? {
-          commit_position: request.stream.expectedPosition.commitPosition,
-          prepare_position: request.stream.expectedPosition.preparePosition
-        } : null,
-        ...(request.stream.subsetQuery && { subsetQuery: request.stream.subsetQuery })
-      },
-      events: request.events.map(event => ({
-        event_id: event.eventId,
-        event_type: event.eventType,
-        data: JSON.stringify(event.data),
-        metadata: JSON.stringify(event.metadata || {})
-      }))
-    };
-
-    try {
-      // Create metadata with authentication
-      const metadata = this.createAuthMetadata('save events');
-
-      // Use callback-based API to access response headers
-      const response = await new Promise<any>((resolve, reject) => {
-        const call = this.client.saveEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          resolve(response);
+        // Load the protobuf definition
+        const PROTO_PATH = path.join(__dirname, '../eventstore.proto');
+        const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+            keepCase: true,
+            longs: String,
+            enums: String,
+            defaults: true,
+            oneofs: true,
         });
 
-        // Set up token caching from response metadata
-        this.setupTokenCaching(call, 'save events response');
-      });
+        const eventStoreProto = grpc.loadPackageDefinition(packageDefinition) as any;
 
-      this.logger.info(`Successfully saved events to stream '${request.stream.name}'`);
+        // Create the client with keep-alive options and load balancing
+        const channelOptions = {
+            // 'grpc.keepalive_time_ms': keepaliveTimeMs,
+            // 'grpc.keepalive_timeout_ms': keepaliveTimeoutMs,
+            // 'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
+            // 'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
+            // 'grpc.http2.max_pings_without_data': 0,
+            'grpc.lb_policy_name': loadBalancingPolicy,
+            'grpc.service_config': JSON.stringify({
+                loadBalancingConfig: [{[loadBalancingPolicy]: {}}]
+            })
+        };
 
-      // Transform the gRPC response to match our interface
-      return {
-        logPosition: {
-          commitPosition: Number(response.log_position?.commit_position || '0'),
-          preparePosition: Number(response.log_position?.prepare_position || '0')
+        // Determine the target string
+        let targetString: string;
+
+        if (target) {
+            // Use the provided target string directly
+            targetString = target;
+        } else if (host.includes(',')) {
+            // Handle comma-separated list of hosts for manual load balancing
+            const hosts = host.split(',').map(h => h.trim());
+            targetString = hosts.map(h => `${h}:${port}`).join(',');
+        } else {
+            // Standard host:port format
+            targetString = `${host}:${port}`;
         }
-      };
-    } catch (error) {
-      this.logger.error(`Failed to save events to stream '${request.stream.name}':`, error);
 
-      // Enhance error with context
-      const enhancedError = new Error(
-        `Failed to save events to stream '${request.stream.name}': ${(error as Error).message}`
-      );
-      enhancedError.stack = (error as Error).stack;
-      (enhancedError as any).originalError = error;
-      (enhancedError as any).streamName = request.stream.name;
-      (enhancedError as any).eventCount = request.events.length;
+        this.client = new eventStoreProto.orisun.EventStore(
+            targetString,
+            credentials,
+            channelOptions
+        );
 
-      throw enhancedError;
-    }
-  }
+        // Set up authentication metadata
+        this.credentials = new grpc.Metadata();
+        const auth = Buffer.from(`${username}:${password}`).toString('base64');
+        this.credentials.add('authorization', `Basic ${auth}`);
 
-  /**
-   * Get events from a stream
-   * @throws {Error} If the request is invalid or the operation fails
-   */
-  async getEvents(request: GetEventsRequest): Promise<Event[]> {
-    // Check if client is disposed
-    if (this.disposed) {
-      throw new Error('Client has been disposed');
-    }
+        // Set up logger
+        this.logger = options.logger || {
+            debug: () => {
+            },
+            info: () => {
+            },
+            warn: () => {
+            },
+            error: () => {
+            }
+        };
 
-    if (!request) {
-      throw new Error('GetEventsRequest cannot be null or undefined');
-    }
+        if (options.enableLogging) {
+            this.logger.info('EventStoreClient initialized');
+        }
 
-    if (!request.boundary) {
-      throw new Error('Boundary is required');
-    }
+        // Perform mandatory health check immediately after connection
+        // Use setImmediate to perform health check after constructor completes
+        setImmediate(async () => {
+            // Skip health check if client has been disposed
+            if (this.disposed) {
+                return;
+            }
 
-    // If stream is specified, validate stream name
-    if (request.stream && !request.stream.name) {
-      throw new Error('Stream name is required when stream is specified');
-    }
+            // Skip health check during testing
+            if (process.env.NODE_ENV === 'test') {
+                this.logger.info('Skipping health check during testing');
+                return;
+            }
 
-    // Validate count if provided
-    if (request.count !== undefined && request.count <= 0) {
-      throw new Error('Count must be greater than 0');
-    }
-
-    const streamInfo = request.stream ? `stream '${request.stream.name}'` : 'all streams';
-    this.logger.debug(`Getting events from ${streamInfo}`);
-
-    const countValue = request.count || 100;
-    this.logger.debug(`Setting count to: ${countValue}`);
-
-    // Use plain object instead of protobuf classes
-    const grpcRequest: any = {
-      boundary: request.boundary,
-      count: countValue,
-      direction: request.direction === 'DESC' ? 1 : 0 // DESC = 1, ASC = 0
-    };
-
-    if (request.query) {
-      grpcRequest.query = request.query;
+            try {
+                const isHealthy = await this.healthCheck();
+                if (!isHealthy) {
+                    const error = new Error('EventStore connection health check failed');
+                    this.logger.error('Initial health check failed:', error);
+                    throw error;
+                }
+                this.logger.info('Initial health check passed - connection established');
+            } catch (error) {
+                this.logger.error('Initial health check error:', error);
+                throw error;
+            }
+        });
     }
 
-    if (request.fromPosition) {
-      grpcRequest.from_position = {
-        commitPosition: request.fromPosition.commitPosition,
-        preparePosition: request.fromPosition.preparePosition
-      };
+    /**
+     * Create metadata with authentication token or basic auth
+     * @param operation Optional description of the operation for logging
+     * @returns gRPC Metadata with authentication headers
+     */
+    private createAuthMetadata(operation?: string): grpc.Metadata {
+        const metadata = new grpc.Metadata();
+        if (this.cachedToken) {
+            metadata.add('x-auth-token', this.cachedToken);
+            this.logger.debug(`Using cached auth token${operation ? ` for ${operation}` : ''}`);
+        }
+        if (this.credentials) {
+            metadata.add('authorization', this.credentials.get('authorization')[0]);
+            this.logger.debug(`Using basic auth${operation ? ` for ${operation}` : ''}`);
+        }
+        return metadata;
     }
 
-    if (request.stream) {
-      grpcRequest.stream = {
-        name: request.stream.name,
-      };
+    /**
+     * Set up metadata event listener to cache authentication tokens from response
+     * @param call The gRPC call object
+     * @param operation Optional description of the operation for logging
+     */
+    private setupTokenCaching(call: any, operation?: string): void {
+        // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
+        call.on('metadata', (metadata: grpc.Metadata) => {
+            this.logger.debug('Response metadata:', metadata);
+
+            // Extract token from response headers if present
+            if (metadata) {
+                const tokens = metadata.get('x-auth-token');
+                if (tokens && tokens.length > 0) {
+                    // Convert MetadataValue (Buffer) to string
+                    this.cachedToken = tokens[0].toString();
+                    this.logger.debug(`Cached auth token from ${operation || 'response'}`);
+                }
+            }
+        });
     }
 
-    this.logger.debug(`Getting events from ${streamInfo} with count: ${countValue}`);
+    /**
+     * Save events to a stream
+     * @throws {Error} If the request is invalid or the operation fails
+     * @returns {Promise<WriteResult>} The write result containing the log position
+     */
+    async saveEvents(request: SaveEventsRequest): Promise<WriteResult> {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
 
-    try {
-      // Create metadata with authentication
-      const metadata = this.createAuthMetadata('get events');
+        if (!request) {
+            throw new Error('SaveEventsRequest cannot be null or undefined');
+        }
 
-      // Use callback-based API to access response headers
-      const response = await new Promise<any>((resolve, reject) => {
-        const call = this.client.getEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
-          if (error) {
-            reject(error);
-            return;
-          }
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
 
-          resolve(response);
+        if (!request.events || !Array.isArray(request.events) || request.events.length === 0) {
+            throw new Error('At least one event is required');
+        }
+
+        // Validate each event
+        request.events.forEach((event, index) => {
+            if (!event.eventId) {
+                throw new Error(`Event at index ${index} is missing eventId`);
+            }
+            if (!event.eventType) {
+                throw new Error(`Event at index ${index} is missing eventType`);
+            }
+            if (event.data === undefined || event.data === null) {
+                throw new Error(`Event at index ${index} is missing data`);
+            }
         });
 
-        // Set up token caching from response metadata
-        this.setupTokenCaching(call, 'get events response');
-      });
+        this.logger.debug(`Saving ${request.events.length} events`);
 
-      if (!response || !response.events || response.events.length === 0) {
-        this.logger.warn(`No events returned from ${streamInfo}`);
-        return [];
-      }
+        // Try using plain object approach instead of generated protobuf classes
+        const grpcRequest = {
+            boundary: request.boundary,
+            query: {
+                expected_position: request.query.expectedPosition ? {
+                    commit_position: request.query.expectedPosition.commitPosition,
+                    prepare_position: request.query.expectedPosition.preparePosition
+                } : null,
+                ...(request.query.subsetQuery && {subsetQuery: request.query.subsetQuery})
+            },
+            events: request.events.map(event => ({
+                event_id: event.eventId,
+                event_type: event.eventType,
+                data: JSON.stringify(event.data),
+                metadata: JSON.stringify(event.metadata || {})
+            }))
+        };
 
-      const events = response.events.map((event: any) => {
         try {
-          return {
-            eventId: event.event_id,
-            eventType: event.event_type,
-            data: JSON.parse(event.data),
-            metadata: JSON.parse(event.metadata || '{}'),
-            streamId: event.stream_id,
-            position: {
-              commitPosition: Number(event.position?.commit_position || '0'),
-              preparePosition: Number(event.position?.prepare_position || '0')
-            },
-            dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
-          };
-        } catch (parseError) {
-          this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
-          // Return event with unparsed data to avoid losing the event
-          return {
-            eventId: event.event_id,
-            eventType: event.event_type,
-            data: event.data, // Raw string
-            metadata: event.metadata || '{}', // Raw string
-            streamId: event.stream_id,
-            position: {
-              commitPosition: Number(event.position?.commit_position || '0'),
-              preparePosition: Number(event.position?.prepare_position || '0')
-            },
-            dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
-          };
+            // Create metadata with authentication
+            const metadata = this.createAuthMetadata('save events');
+
+            // Use callback-based API to access response headers
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.saveEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    resolve(response);
+                });
+
+                // Set up token caching from response metadata
+                this.setupTokenCaching(call, 'save events response');
+            });
+
+            this.logger.info(`Successfully saved events`);
+
+            // Transform the gRPC response to match our interface
+            return {
+                logPosition: {
+                    commitPosition: Number(response.log_position?.commit_position || '0'),
+                    preparePosition: Number(response.log_position?.prepare_position || '0')
+                }
+            };
+        } catch (error) {
+            this.logger.error(`Failed to save events: `, error);
+
+            // Enhance error with context
+            const enhancedError = new Error(
+                `Failed to save events to stream: ${(error as Error).message}`
+            );
+            enhancedError.stack = (error as Error).stack;
+            (enhancedError as any).originalError = error;
+            (enhancedError as any).eventCount = request.events.length;
+
+            throw enhancedError;
         }
-      });
-
-      this.logger.debug(`Successfully retrieved ${events.length} events from ${streamInfo}`);
-      return events;
-    } catch (error) {
-      this.logger.error(`Failed to get events from ${streamInfo}:`, error);
-
-      // Enhance error with context
-      const enhancedError = new Error(
-        `Failed to get events from ${streamInfo}: ${(error as Error).message}`
-      );
-      enhancedError.stack = (error as Error).stack;
-      (enhancedError as any).originalError = error;
-      (enhancedError as any).streamName = request.stream?.name;
-      (enhancedError as any).boundary = request.boundary;
-
-      throw enhancedError;
-    }
-  }
-
-  /**
-   * Subscribe to events using async iteration (for await...of)
-   * @param request The subscription request
-   * @param onEvent Event handler function
-   * @param onError Optional error handler function
-   * @returns gRPC stream that can be cancelled
-   */
-  subscribeToEvents(
-    request: SubscribeRequest,
-    onEvent: (event: Event) => Promise<void>,
-    onError?: (error: Error) => void
-  ): grpc.ClientReadableStream<any> {
-    // Check if client is disposed
-    if (this.disposed) {
-      throw new Error('Client has been disposed');
     }
 
-    if (!request) {
-      throw new Error('SubscribeRequest cannot be null or undefined');
-    }
+    /**
+     * Get events from a stream
+     * @throws {Error} If the request is invalid or the operation fails
+     */
+    async getEvents(request: GetEventsRequest): Promise<Event[]> {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
 
-    if (!request.boundary) {
-      throw new Error('Boundary is required');
-    }
+        if (!request) {
+            throw new Error('GetEventsRequest cannot be null or undefined');
+        }
 
-    if (!request.subscriberName) {
-      throw new Error('Subscriber name is required');
-    }
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
 
-    if (!onEvent || typeof onEvent !== 'function') {
-      throw new Error('Event handler function is required');
-    }
+        // Validate count if provided
+        if (request.count !== undefined && request.count <= 0) {
+            throw new Error('Count must be greater than 0');
+        }
 
-    const streamInfo = request.stream ? `stream '${request.stream}'` : 'all streams';
-    this.logger.debug(`Subscribing to ${streamInfo} with subscriber '${request.subscriberName}' (async)`);
+        const countValue = request.count || 100;
+        this.logger.debug(`Setting count to: ${countValue}`);
 
-    let stream: grpc.ClientReadableStream<any>;
-
-    try {
-      if (request.stream) {
-        // Subscribe to a specific stream - use plain object
+        // Use plain object instead of protobuf classes
         const grpcRequest: any = {
-          subscriber_name: request.subscriberName,
-          boundary: request.boundary,
-          stream: request.stream,
-          after_position: request.afterPosition ? {
-            commit_position: request.afterPosition.commitPosition,
-            prepare_position: request.afterPosition.preparePosition
-          } : null
+            boundary: request.boundary,
+            count: countValue,
+            direction: request.direction === 'DESC' ? 1 : 0 // DESC = 1, ASC = 0
         };
 
         if (request.query) {
-          grpcRequest.query = request.query;
+            grpcRequest.query = request.query;
         }
 
-        // Create metadata with authentication
-        const metadata = this.createAuthMetadata('stream subscription');
-        stream = this.client.catchUpSubscribeToStream(grpcRequest, metadata);
-      } else {
-        // Subscribe to all events - use plain object
-        const grpcRequest: any = {
-          subscriber_name: request.subscriberName,
-          boundary: request.boundary,
-        };
-
-        if (request.afterPosition) {
-          grpcRequest.after_position = {
-            commit_position: request.afterPosition.commitPosition,
-            prepare_position: request.afterPosition.preparePosition
-          };
+        if (request.fromPosition) {
+            grpcRequest.from_position = {
+                commitPosition: request.fromPosition.commitPosition,
+                preparePosition: request.fromPosition.preparePosition
+            };
         }
 
-        if (request.query) {
-          grpcRequest.query = request.query;
+        this.logger.debug(`Getting events with count: ${countValue}`);
+
+        try {
+            // Create metadata with authentication
+            const metadata = this.createAuthMetadata('get events');
+
+            // Use callback-based API to access response headers
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.getEvents(grpcRequest, metadata, (error: any, response: any, responseMetadata: grpc.Metadata) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    resolve(response);
+                });
+
+                // Set up token caching from response metadata
+                this.setupTokenCaching(call, 'get events response');
+            });
+
+            if (!response || !response.events || response.events.length === 0) {
+                this.logger.warn(`No events returned`);
+                return [];
+            }
+
+            const events = response.events.map((event: any) => {
+                try {
+                    return {
+                        eventId: event.event_id,
+                        eventType: event.event_type,
+                        data: JSON.parse(event.data),
+                        metadata: JSON.parse(event.metadata || '{}'),
+                        position: {
+                            commitPosition: Number(event.position?.commit_position || '0'),
+                            preparePosition: Number(event.position?.prepare_position || '0')
+                        },
+                        dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+                    };
+                } catch (parseError) {
+                    this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
+                    // Return event with unparsed data to avoid losing the event
+                    return {
+                        eventId: event.event_id,
+                        eventType: event.event_type,
+                        data: event.data, // Raw string
+                        metadata: event.metadata || '{}', // Raw string
+                        position: {
+                            commitPosition: Number(event.position?.commit_position || '0'),
+                            preparePosition: Number(event.position?.prepare_position || '0')
+                        },
+                        dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+                    };
+                }
+            });
+
+            this.logger.debug(`Successfully retrieved ${events.length} events`);
+            return events;
+        } catch (error) {
+            this.logger.error(`Failed to get events:`, error);
+
+            // Enhance error with context
+            const enhancedError = new Error(
+                `Failed to get events: ${(error as Error).message}`
+            );
+            enhancedError.stack = (error as Error).stack;
+            (enhancedError as any).originalError = error;
+            (enhancedError as any).boundary = request.boundary;
+
+            throw enhancedError;
         }
-
-        // Create metadata with authentication
-        const metadata = this.createAuthMetadata('event subscription');
-        stream = request.stream ? this.client.catchUpSubscribeToStream(grpcRequest, metadata) : this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
-        this.setupTokenCaching(stream, 'event subscription response');
-      }
-    } catch (error) {
-      this.logger.error(`Failed to create subscription to ${streamInfo}:`, error);
-
-      // Enhance error with context
-      const enhancedError = new Error(
-        `Failed to create subscription to ${streamInfo}: ${(error as Error).message}`
-      );
-      enhancedError.stack = (error as Error).stack;
-      (enhancedError as any).originalError = error;
-      (enhancedError as any).streamName = request.stream;
-      (enhancedError as any).subscriberName = request.subscriberName;
-
-      throw enhancedError;
     }
 
-    this.logger.debug(`Successfully subscribed to ${streamInfo} (async)`);
+    /**
+     * Subscribe to events using async iteration (for await...of)
+     * @param request The subscription request
+     * @param onEvent Event handler function
+     * @param onError Optional error handler function
+     * @returns gRPC stream that can be cancelled
+     */
+    subscribeToEvents(
+        request: SubscribeRequest,
+        onEvent: (event: Event) => Promise<void>,
+        onError?: (error: Error) => void
+    ): grpc.ClientReadableStream<any> {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
 
-    // Start async iteration in background
-    (async () => {
-      try {
-        // Use for await...of for cleaner async iteration
-        for await (const event of stream) {
-          try {
-            const parsedEvent: Event = {
-              eventId: event.event_id,
-              eventType: event.event_type,
-              data: JSON.parse(event.data),
-              metadata: JSON.parse(event.metadata || '{}'),
-              streamId: event.stream_id,
-              position: {
-                commitPosition: Number(event.position?.commit_position || '0'),
-                preparePosition: Number(event.position?.prepare_position || '0')
-              },
-              dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+        if (!request) {
+            throw new Error('SubscribeRequest cannot be null or undefined');
+        }
+
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
+
+        if (!request.subscriberName) {
+            throw new Error('Subscriber name is required');
+        }
+
+        if (!onEvent || typeof onEvent !== 'function') {
+            throw new Error('Event handler function is required');
+        }
+
+        this.logger.debug(`Subscribing with subscriber '${request.subscriberName}' (async)`);
+
+        let stream: grpc.ClientReadableStream<any>;
+
+        try {
+            // Subscribe to all events - use plain object
+            const grpcRequest: any = {
+                subscriber_name: request.subscriberName,
+                boundary: request.boundary,
             };
 
-            // Events are processed sequentially with await
-            await onEvent(parsedEvent);
-          } catch (parseError) {
-            this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
-
-            // Call error handler with enhanced error
-            const enhancedError = new Error(
-              `Failed to parse event: ${(parseError as Error).message}`
-            );
-            enhancedError.stack = (parseError as Error).stack;
-            (enhancedError as any).originalError = parseError;
-            (enhancedError as any).eventId = event.eventId;
-            (enhancedError as any).eventType = event.eventType;
-
-            if (onError) {
-              onError(enhancedError);
-            } else {
-              this.logger.error('Subscription parse error:', enhancedError);
+            if (request.afterPosition) {
+                grpcRequest.after_position = {
+                    commit_position: request.afterPosition.commitPosition,
+                    prepare_position: request.afterPosition.preparePosition
+                };
             }
-          }
+
+            if (request.query) {
+                grpcRequest.query = request.query;
+            }
+
+            // Create metadata with authentication
+            const metadata = this.createAuthMetadata('event subscription');
+            stream = this.client.catchUpSubscribeToEvents(grpcRequest, metadata);
+            this.setupTokenCaching(stream, 'event subscription response');
+
+        } catch (error) {
+            this.logger.error(`Failed to create subscription: `, error);
+
+            // Enhance error with context
+            const enhancedError = new Error(
+                `Failed to create subscription: ${(error as Error).message}`
+            );
+            enhancedError.stack = (error as Error).stack;
+            (enhancedError as any).originalError = error;
+            (enhancedError as any).subscriberName = request.subscriberName;
+
+            throw enhancedError;
         }
 
-        this.logger.debug(`Subscription to ${streamInfo} ended (async)`);
-      } catch (error) {
-        this.logger.error(`Subscription error for ${streamInfo}:`, error);
+        this.logger.debug(`Successfully subscribed to eventstore (async)`);
 
-        // Enhance error with context
-        const enhancedError = new Error(
-          `Subscription error for ${streamInfo}: ${(error as Error).message}`
-        );
-        enhancedError.stack = (error as Error).stack;
-        (enhancedError as any).originalError = error;
-        (enhancedError as any).streamName = request.stream;
-        (enhancedError as any).subscriberName = request.subscriberName;
+        // Start async iteration in background
+        (async () => {
+            try {
+                // Use for await...of for cleaner async iteration
+                for await (const event of stream) {
+                    try {
+                        const parsedEvent: Event = {
+                            eventId: event.event_id,
+                            eventType: event.event_type,
+                            data: JSON.parse(event.data),
+                            metadata: JSON.parse(event.metadata || '{}'),
+                            position: {
+                                commitPosition: Number(event.position?.commit_position || '0'),
+                                preparePosition: Number(event.position?.prepare_position || '0')
+                            },
+                            dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
+                        };
 
-        if (onError) {
-          onError(enhancedError);
-        } else {
-          this.logger.error('Unhandled subscription error:', enhancedError);
-        }
-      }
-    })();
+                        // Events are processed sequentially with await
+                        await onEvent(parsedEvent);
+                    } catch (parseError) {
+                        this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
 
-    return stream;
-  }
+                        // Call error handler with enhanced error
+                        const enhancedError = new Error(
+                            `Failed to parse event: ${(parseError as Error).message}`
+                        );
+                        enhancedError.stack = (parseError as Error).stack;
+                        (enhancedError as any).originalError = parseError;
+                        (enhancedError as any).eventId = event.eventId;
+                        (enhancedError as any).eventType = event.eventType;
 
-  /**
-   * Close the client connection and clean up resources
-   */
-  close(): void {
-    if (this.disposed) {
-      this.logger.debug('EventStoreClient already disposed');
-      return;
+                        if (onError) {
+                            onError(enhancedError);
+                        } else {
+                            this.logger.error('Subscription parse error:', enhancedError);
+                        }
+                    }
+                }
+
+                this.logger.debug(`Subscription ended (async)`);
+            } catch (error) {
+                this.logger.error(`Subscription error:`, error);
+
+                // Enhance error with context
+                const enhancedError = new Error(
+                    `Subscription error: ${(error as Error).message}`
+                );
+                enhancedError.stack = (error as Error).stack;
+                (enhancedError as any).originalError = error;
+                (enhancedError as any).subscriberName = request.subscriberName;
+
+                if (onError) {
+                    onError(enhancedError);
+                } else {
+                    this.logger.error('Unhandled subscription error:', enhancedError);
+                }
+            }
+        })();
+
+        return stream;
     }
 
-    this.logger.debug('Closing EventStoreClient connection');
-
-    try {
-      // No rate limiter or circuit breaker to clean up
-
-      // In newer versions of gRPC, we need to close the channel
-      if (this.client && typeof this.client.close === 'function') {
-        this.client.close();
-      } else if (this.client && (this.client as any).channel) {
-        // Try to close the underlying channel
-        const channel = (this.client as any).channel;
-        if (typeof channel.close === 'function') {
-          channel.close();
-        }
-      }
-
-      this.disposed = true;
-      this.logger.debug('EventStoreClient connection closed successfully');
-    } catch (error) {
-      this.logger.error('Error closing EventStoreClient connection:', error);
-      throw new Error(`Failed to close EventStoreClient: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * Ping the server to check connectivity
-   * @returns Promise<void> Resolves if the server responds successfully
-   */
-  async ping(): Promise<void> {
-    // Check if client is disposed
-    if (this.disposed) {
-      throw new Error('Client has been disposed');
-    }
-
-    this.logger.debug('Pinging server');
-
-    try {
-      // Create metadata with authentication
-      const metadata = this.createAuthMetadata('ping');
-
-      // Use callback-based API to access response headers
-      const response = await new Promise<any>((resolve, reject) => {
-        const call = this.client.ping({}, metadata, (error: any, response: any) => {
-          if (error) {
-            reject(error);
+    /**
+     * Close the client connection and clean up resources
+     */
+    close(): void {
+        if (this.disposed) {
+            this.logger.debug('EventStoreClient already disposed');
             return;
-          }
+        }
 
-          setTimeout(() => {
-            resolve(response);
-          },
-            1000
-          );
-        });
+        this.logger.debug('Closing EventStoreClient connection');
 
-        // Set up token caching from response metadata
-        this.setupTokenCaching(call, 'ping response');
-      });
+        try {
+            // No rate limiter or circuit breaker to clean up
 
-      this.logger.debug('Ping successful');
-    } catch (error) {
-      this.logger.error('Ping failed:', error);
-      throw new Error(`Ping failed: ${(error as Error).message}`);
-    }
-  }
+            // In newer versions of gRPC, we need to close the channel
+            if (this.client && typeof this.client.close === 'function') {
+                this.client.close();
+            } else if (this.client && (this.client as any).channel) {
+                // Try to close the underlying channel
+                const channel = (this.client as any).channel;
+                if (typeof channel.close === 'function') {
+                    channel.close();
+                }
+            }
 
-  /**
-   * Check if the client is connected to the server
-   * @returns Promise<boolean> True if connected, false otherwise
-   */
-  async healthCheck(): Promise<boolean> {
-    // Check if client is disposed
-    if (this.disposed) {
-      throw new Error('Client has been disposed');
+            this.disposed = true;
+            this.logger.debug('EventStoreClient connection closed successfully');
+        } catch (error) {
+            this.logger.error('Error closing EventStoreClient connection:', error);
+            throw new Error(`Failed to close EventStoreClient: ${(error as Error).message}`);
+        }
     }
 
-    this.logger.debug('Performing health check');
+    /**
+     * Ping the server to check connectivity
+     * @returns Promise<void> Resolves if the server responds successfully
+     */
+    async ping(): Promise<void> {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
 
-    try {
-      // Use ping instead of getEvents for health check
-      await this.ping();
+        this.logger.debug('Pinging server');
 
-      // Try to make a simple call to test connectivity
-      await this.getEvents({
-        boundary: 'orisun_admin',
-        stream: { name: 'health-check' }
-      });
-      this.logger.debug('Health check successful');
-      return true;
-    } catch (error) {
-      this.logger.warn('Health check failed:', error);
-      return false;
+        try {
+            // Create metadata with authentication
+            const metadata = this.createAuthMetadata('ping');
+
+            // Use callback-based API to access response headers
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.ping({}, metadata, (error: any, response: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    setTimeout(() => {
+                            resolve(response);
+                        },
+                        1000
+                    );
+                });
+
+                // Set up token caching from response metadata
+                this.setupTokenCaching(call, 'ping response');
+            });
+
+            this.logger.debug('Ping successful');
+        } catch (error) {
+            this.logger.error('Ping failed:', error);
+            throw new Error(`Ping failed: ${(error as Error).message}`);
+        }
     }
-  }
+
+    /**
+     * Check if the client is connected to the server
+     * @returns Promise<boolean> True if connected, false otherwise
+     */
+    async healthCheck(): Promise<boolean> {
+        // Check if client is disposed
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+
+        this.logger.debug('Performing health check');
+
+        try {
+            // Use ping instead of getEvents for health check
+            await this.ping();
+
+            // Try to make a simple call to test connectivity
+            await this.getEvents({
+                boundary: 'orisun_admin',
+                count: 1
+            });
+            this.logger.debug('Health check successful');
+            return true;
+        } catch (error) {
+            this.logger.warn('Health check failed:', error);
+            return false;
+        }
+    }
 }
