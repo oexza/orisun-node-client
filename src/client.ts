@@ -201,7 +201,7 @@ export class EventStoreClient {
         this.logger = enableLogging ? (logger || console) : new NoopLogger();
 
         // Load the protobuf definition
-        const PROTO_PATH = path.join(__dirname, '../eventstore.proto');
+        const PROTO_PATH = path.join(__dirname, '../protos/eventstore.proto');
         const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
             keepCase: true,
             longs: String,
