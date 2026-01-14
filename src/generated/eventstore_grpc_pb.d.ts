@@ -1,4 +1,4 @@
-// package: eventstore
+// package: orisun
 // file: eventstore.proto
 
 /* tslint:disable */
@@ -12,11 +12,11 @@ interface IEventStoreService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     saveEvents: IEventStoreService_ISaveEvents;
     getEvents: IEventStoreService_IGetEvents;
     catchUpSubscribeToEvents: IEventStoreService_ICatchUpSubscribeToEvents;
-    catchUpSubscribeToStream: IEventStoreService_ICatchUpSubscribeToStream;
+    ping: IEventStoreService_IPing;
 }
 
 interface IEventStoreService_ISaveEvents extends grpc.MethodDefinition<eventstore_pb.SaveEventsRequest, eventstore_pb.WriteResult> {
-    path: "/eventstore.EventStore/SaveEvents";
+    path: "/orisun.EventStore/SaveEvents";
     requestStream: false;
     responseStream: false;
     requestSerialize: grpc.serialize<eventstore_pb.SaveEventsRequest>;
@@ -25,7 +25,7 @@ interface IEventStoreService_ISaveEvents extends grpc.MethodDefinition<eventstor
     responseDeserialize: grpc.deserialize<eventstore_pb.WriteResult>;
 }
 interface IEventStoreService_IGetEvents extends grpc.MethodDefinition<eventstore_pb.GetEventsRequest, eventstore_pb.GetEventsResponse> {
-    path: "/eventstore.EventStore/GetEvents";
+    path: "/orisun.EventStore/GetEvents";
     requestStream: false;
     responseStream: false;
     requestSerialize: grpc.serialize<eventstore_pb.GetEventsRequest>;
@@ -34,7 +34,7 @@ interface IEventStoreService_IGetEvents extends grpc.MethodDefinition<eventstore
     responseDeserialize: grpc.deserialize<eventstore_pb.GetEventsResponse>;
 }
 interface IEventStoreService_ICatchUpSubscribeToEvents extends grpc.MethodDefinition<eventstore_pb.CatchUpSubscribeToEventStoreRequest, eventstore_pb.Event> {
-    path: "/eventstore.EventStore/CatchUpSubscribeToEvents";
+    path: "/orisun.EventStore/CatchUpSubscribeToEvents";
     requestStream: false;
     responseStream: true;
     requestSerialize: grpc.serialize<eventstore_pb.CatchUpSubscribeToEventStoreRequest>;
@@ -42,14 +42,14 @@ interface IEventStoreService_ICatchUpSubscribeToEvents extends grpc.MethodDefini
     responseSerialize: grpc.serialize<eventstore_pb.Event>;
     responseDeserialize: grpc.deserialize<eventstore_pb.Event>;
 }
-interface IEventStoreService_ICatchUpSubscribeToStream extends grpc.MethodDefinition<eventstore_pb.CatchUpSubscribeToStreamRequest, eventstore_pb.Event> {
-    path: "/eventstore.EventStore/CatchUpSubscribeToStream";
+interface IEventStoreService_IPing extends grpc.MethodDefinition<eventstore_pb.PingRequest, eventstore_pb.PingResponse> {
+    path: "/orisun.EventStore/Ping";
     requestStream: false;
-    responseStream: true;
-    requestSerialize: grpc.serialize<eventstore_pb.CatchUpSubscribeToStreamRequest>;
-    requestDeserialize: grpc.deserialize<eventstore_pb.CatchUpSubscribeToStreamRequest>;
-    responseSerialize: grpc.serialize<eventstore_pb.Event>;
-    responseDeserialize: grpc.deserialize<eventstore_pb.Event>;
+    responseStream: false;
+    requestSerialize: grpc.serialize<eventstore_pb.PingRequest>;
+    requestDeserialize: grpc.deserialize<eventstore_pb.PingRequest>;
+    responseSerialize: grpc.serialize<eventstore_pb.PingResponse>;
+    responseDeserialize: grpc.deserialize<eventstore_pb.PingResponse>;
 }
 
 export const EventStoreService: IEventStoreService;
@@ -58,7 +58,7 @@ export interface IEventStoreServer extends grpc.UntypedServiceImplementation {
     saveEvents: grpc.handleUnaryCall<eventstore_pb.SaveEventsRequest, eventstore_pb.WriteResult>;
     getEvents: grpc.handleUnaryCall<eventstore_pb.GetEventsRequest, eventstore_pb.GetEventsResponse>;
     catchUpSubscribeToEvents: grpc.handleServerStreamingCall<eventstore_pb.CatchUpSubscribeToEventStoreRequest, eventstore_pb.Event>;
-    catchUpSubscribeToStream: grpc.handleServerStreamingCall<eventstore_pb.CatchUpSubscribeToStreamRequest, eventstore_pb.Event>;
+    ping: grpc.handleUnaryCall<eventstore_pb.PingRequest, eventstore_pb.PingResponse>;
 }
 
 export interface IEventStoreClient {
@@ -70,8 +70,9 @@ export interface IEventStoreClient {
     getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
-    catchUpSubscribeToStream(request: eventstore_pb.CatchUpSubscribeToStreamRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
-    catchUpSubscribeToStream(request: eventstore_pb.CatchUpSubscribeToStreamRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
+    ping(request: eventstore_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
+    ping(request: eventstore_pb.PingRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
+    ping(request: eventstore_pb.PingRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
 }
 
 export class EventStoreClient extends grpc.Client implements IEventStoreClient {
@@ -84,6 +85,7 @@ export class EventStoreClient extends grpc.Client implements IEventStoreClient {
     public getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     public catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     public catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
-    public catchUpSubscribeToStream(request: eventstore_pb.CatchUpSubscribeToStreamRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
-    public catchUpSubscribeToStream(request: eventstore_pb.CatchUpSubscribeToStreamRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
+    public ping(request: eventstore_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
+    public ping(request: eventstore_pb.PingRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
+    public ping(request: eventstore_pb.PingRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
 }

@@ -1,4 +1,4 @@
-// package: eventstore
+// package: orisun
 // file: eventstore.proto
 
 /* tslint:disable */
@@ -145,8 +145,6 @@ export class Event extends jspb.Message {
     clearDateCreated(): void;
     getDateCreated(): google_protobuf_timestamp_pb.Timestamp | undefined;
     setDateCreated(value?: google_protobuf_timestamp_pb.Timestamp): Event;
-    getStreamId(): string;
-    setStreamId(value: string): Event;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Event.AsObject;
@@ -166,7 +164,6 @@ export namespace Event {
         metadata: string,
         position?: Position.AsObject,
         dateCreated?: google_protobuf_timestamp_pb.Timestamp.AsObject,
-        streamId: string,
     }
 }
 
@@ -193,33 +190,30 @@ export namespace WriteResult {
     }
 }
 
-export class SaveStreamQuery extends jspb.Message { 
-    getName(): string;
-    setName(value: string): SaveStreamQuery;
+export class SaveQuery extends jspb.Message { 
 
     hasExpectedPosition(): boolean;
     clearExpectedPosition(): void;
     getExpectedPosition(): Position | undefined;
-    setExpectedPosition(value?: Position): SaveStreamQuery;
+    setExpectedPosition(value?: Position): SaveQuery;
 
     hasSubsetquery(): boolean;
     clearSubsetquery(): void;
     getSubsetquery(): Query | undefined;
-    setSubsetquery(value?: Query): SaveStreamQuery;
+    setSubsetquery(value?: Query): SaveQuery;
 
     serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): SaveStreamQuery.AsObject;
-    static toObject(includeInstance: boolean, msg: SaveStreamQuery): SaveStreamQuery.AsObject;
+    toObject(includeInstance?: boolean): SaveQuery.AsObject;
+    static toObject(includeInstance: boolean, msg: SaveQuery): SaveQuery.AsObject;
     static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
     static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: SaveStreamQuery, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): SaveStreamQuery;
-    static deserializeBinaryFromReader(message: SaveStreamQuery, reader: jspb.BinaryReader): SaveStreamQuery;
+    static serializeBinaryToWriter(message: SaveQuery, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SaveQuery;
+    static deserializeBinaryFromReader(message: SaveQuery, reader: jspb.BinaryReader): SaveQuery;
 }
 
-export namespace SaveStreamQuery {
+export namespace SaveQuery {
     export type AsObject = {
-        name: string,
         expectedPosition?: Position.AsObject,
         subsetquery?: Query.AsObject,
     }
@@ -229,10 +223,10 @@ export class SaveEventsRequest extends jspb.Message {
     getBoundary(): string;
     setBoundary(value: string): SaveEventsRequest;
 
-    hasStream(): boolean;
-    clearStream(): void;
-    getStream(): SaveStreamQuery | undefined;
-    setStream(value?: SaveStreamQuery): SaveEventsRequest;
+    hasQuery(): boolean;
+    clearQuery(): void;
+    getQuery(): SaveQuery | undefined;
+    setQuery(value?: SaveQuery): SaveEventsRequest;
     clearEventsList(): void;
     getEventsList(): Array<EventToSave>;
     setEventsList(value: Array<EventToSave>): SaveEventsRequest;
@@ -251,34 +245,8 @@ export class SaveEventsRequest extends jspb.Message {
 export namespace SaveEventsRequest {
     export type AsObject = {
         boundary: string,
-        stream?: SaveStreamQuery.AsObject,
+        query?: SaveQuery.AsObject,
         eventsList: Array<EventToSave.AsObject>,
-    }
-}
-
-export class GetStreamQuery extends jspb.Message { 
-    getName(): string;
-    setName(value: string): GetStreamQuery;
-
-    hasFromPosition(): boolean;
-    clearFromPosition(): void;
-    getFromPosition(): Position | undefined;
-    setFromPosition(value?: Position): GetStreamQuery;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): GetStreamQuery.AsObject;
-    static toObject(includeInstance: boolean, msg: GetStreamQuery): GetStreamQuery.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: GetStreamQuery, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): GetStreamQuery;
-    static deserializeBinaryFromReader(message: GetStreamQuery, reader: jspb.BinaryReader): GetStreamQuery;
-}
-
-export namespace GetStreamQuery {
-    export type AsObject = {
-        name: string,
-        fromPosition?: Position.AsObject,
     }
 }
 
@@ -300,11 +268,6 @@ export class GetEventsRequest extends jspb.Message {
     getBoundary(): string;
     setBoundary(value: string): GetEventsRequest;
 
-    hasStream(): boolean;
-    clearStream(): void;
-    getStream(): GetStreamQuery | undefined;
-    setStream(value?: GetStreamQuery): GetEventsRequest;
-
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): GetEventsRequest.AsObject;
     static toObject(includeInstance: boolean, msg: GetEventsRequest): GetEventsRequest.AsObject;
@@ -322,7 +285,6 @@ export namespace GetEventsRequest {
         count: number,
         direction: Direction,
         boundary: string,
-        stream?: GetStreamQuery.AsObject,
     }
 }
 
@@ -350,10 +312,10 @@ export namespace GetEventsResponse {
 
 export class CatchUpSubscribeToEventStoreRequest extends jspb.Message { 
 
-    hasAfterposition(): boolean;
-    clearAfterposition(): void;
-    getAfterposition(): Position | undefined;
-    setAfterposition(value?: Position): CatchUpSubscribeToEventStoreRequest;
+    hasAfterPosition(): boolean;
+    clearAfterPosition(): void;
+    getAfterPosition(): Position | undefined;
+    setAfterPosition(value?: Position): CatchUpSubscribeToEventStoreRequest;
 
     hasQuery(): boolean;
     clearQuery(): void;
@@ -376,48 +338,44 @@ export class CatchUpSubscribeToEventStoreRequest extends jspb.Message {
 
 export namespace CatchUpSubscribeToEventStoreRequest {
     export type AsObject = {
-        afterposition?: Position.AsObject,
+        afterPosition?: Position.AsObject,
         query?: Query.AsObject,
         subscriberName: string,
         boundary: string,
     }
 }
 
-export class CatchUpSubscribeToStreamRequest extends jspb.Message { 
-
-    hasQuery(): boolean;
-    clearQuery(): void;
-    getQuery(): Query | undefined;
-    setQuery(value?: Query): CatchUpSubscribeToStreamRequest;
-    getSubscriberName(): string;
-    setSubscriberName(value: string): CatchUpSubscribeToStreamRequest;
-    getBoundary(): string;
-    setBoundary(value: string): CatchUpSubscribeToStreamRequest;
-    getStream(): string;
-    setStream(value: string): CatchUpSubscribeToStreamRequest;
-
-    hasAfterPosition(): boolean;
-    clearAfterPosition(): void;
-    getAfterPosition(): Position | undefined;
-    setAfterPosition(value?: Position): CatchUpSubscribeToStreamRequest;
+export class PingRequest extends jspb.Message { 
 
     serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): CatchUpSubscribeToStreamRequest.AsObject;
-    static toObject(includeInstance: boolean, msg: CatchUpSubscribeToStreamRequest): CatchUpSubscribeToStreamRequest.AsObject;
+    toObject(includeInstance?: boolean): PingRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: PingRequest): PingRequest.AsObject;
     static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
     static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: CatchUpSubscribeToStreamRequest, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): CatchUpSubscribeToStreamRequest;
-    static deserializeBinaryFromReader(message: CatchUpSubscribeToStreamRequest, reader: jspb.BinaryReader): CatchUpSubscribeToStreamRequest;
+    static serializeBinaryToWriter(message: PingRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): PingRequest;
+    static deserializeBinaryFromReader(message: PingRequest, reader: jspb.BinaryReader): PingRequest;
 }
 
-export namespace CatchUpSubscribeToStreamRequest {
+export namespace PingRequest {
     export type AsObject = {
-        query?: Query.AsObject,
-        subscriberName: string,
-        boundary: string,
-        stream: string,
-        afterPosition?: Position.AsObject,
+    }
+}
+
+export class PingResponse extends jspb.Message { 
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): PingResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: PingResponse): PingResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: PingResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): PingResponse;
+    static deserializeBinaryFromReader(message: PingResponse, reader: jspb.BinaryReader): PingResponse;
+}
+
+export namespace PingResponse {
+    export type AsObject = {
     }
 }
 
