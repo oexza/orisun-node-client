@@ -474,8 +474,8 @@ export class EventStoreClient {
 
         if (request.fromPosition) {
             grpcRequest.from_position = {
-                commitPosition: request.fromPosition.commitPosition,
-                preparePosition: request.fromPosition.preparePosition
+                commit_position: request.fromPosition.commitPosition,
+                prepare_position: request.fromPosition.preparePosition
             };
         }
 
