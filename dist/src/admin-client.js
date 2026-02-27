@@ -33,10 +33,23 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminClient = void 0;
+exports.AdminClient = exports.ConditionCombinator = exports.ValueType = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
 const path = __importStar(require("path"));
+// Index Management types
+var ValueType;
+(function (ValueType) {
+    ValueType["TEXT"] = "TEXT";
+    ValueType["NUMERIC"] = "NUMERIC";
+    ValueType["BOOLEAN"] = "BOOLEAN";
+    ValueType["TIMESTAMPTZ"] = "TIMESTAMPTZ";
+})(ValueType || (exports.ValueType = ValueType = {}));
+var ConditionCombinator;
+(function (ConditionCombinator) {
+    ConditionCombinator["AND"] = "AND";
+    ConditionCombinator["OR"] = "OR";
+})(ConditionCombinator || (exports.ConditionCombinator = ConditionCombinator = {}));
 /**
  * Validates admin client options and throws errors for invalid configurations
  */
@@ -492,6 +505,101 @@ class AdminClient {
         catch (error) {
             this.logger.error(`Failed to get event count:`, error);
             throw new Error(`Failed to get event count: ${error.message}`);
+        }
+    }
+    /**
+     * Create an index for a boundary
+     */
+    async createIndex(request) {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!request) {
+            throw new Error('CreateIndexRequest cannot be null or undefined');
+        }
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
+        if (!request.name) {
+            throw new Error('Index name is required');
+        }
+        if (!request.fields || !Array.isArray(request.fields) || request.fields.length === 0) {
+            throw new Error('Fields must be a non-empty array');
+        }
+        this.logger.debug(`Creating index '${request.name}' for boundary '${request.boundary}'`);
+        const grpcRequest = {
+            boundary: request.boundary,
+            name: request.name,
+            fields: request.fields.map(f => ({
+                json_key: f.jsonKey,
+                value_type: f.valueType
+            })),
+            conditions: (request.conditions || []).map(c => ({
+                key: c.key,
+                operator: c.operator,
+                value: c.value
+            })),
+            condition_combinator: request.conditionCombinator || ConditionCombinator.AND
+        };
+        try {
+            const metadata = this.createAuthMetadata('create index');
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client.createIndex(grpcRequest, metadata, (error, response) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(response);
+                });
+                this.setupTokenCaching(call, 'create index response');
+            });
+            this.logger.info(`Successfully created index '${request.name}' for boundary '${request.boundary}'`);
+            return {};
+        }
+        catch (error) {
+            this.logger.error(`Failed to create index:`, error);
+            throw new Error(`Failed to create index: ${error.message}`);
+        }
+    }
+    /**
+     * Drop an index for a boundary
+     */
+    async dropIndex(request) {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!request) {
+            throw new Error('DropIndexRequest cannot be null or undefined');
+        }
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
+        if (!request.name) {
+            throw new Error('Index name is required');
+        }
+        this.logger.debug(`Dropping index '${request.name}' for boundary '${request.boundary}'`);
+        const grpcRequest = {
+            boundary: request.boundary,
+            name: request.name
+        };
+        try {
+            const metadata = this.createAuthMetadata('drop index');
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client.dropIndex(grpcRequest, metadata, (error, response) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(response);
+                });
+                this.setupTokenCaching(call, 'drop index response');
+            });
+            this.logger.info(`Successfully dropped index '${request.name}' for boundary '${request.boundary}'`);
+            return {};
+        }
+        catch (error) {
+            this.logger.error(`Failed to drop index:`, error);
+            throw new Error(`Failed to drop index: ${error.message}`);
         }
     }
     /**

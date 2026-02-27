@@ -94,6 +94,50 @@ message GetEventCountResponse {
   int64 count = 1;
 }
 
+enum ValueType {
+  TEXT = 0;
+  NUMERIC = 1;
+  BOOLEAN = 2;
+  TIMESTAMPTZ = 3;
+}
+
+enum ConditionCombinator {
+  AND = 0;
+  OR = 1;
+}
+
+// IndexField describes one key to include in the index expression.
+// Multiple fields produce a composite index.
+message IndexField {
+  string    json_key = 1;
+  ValueType value_type = 2;
+}
+
+// IndexCondition describes one predicate in the partial-index filter.
+// Multiple conditions are combined with condition_combinator.
+message IndexCondition {
+  string key = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message CreateIndexRequest {
+  string                  boundary = 1;
+  string                  name = 2;
+  repeated IndexField     fields = 3;
+  repeated IndexCondition conditions = 4;
+  ConditionCombinator     condition_combinator = 5;
+}
+
+message CreateIndexResponse {}
+
+message DropIndexRequest {
+  string boundary = 1;
+  string name = 2;
+}
+
+message DropIndexResponse {}
+
 // Admin service provides user management and administrative operations
 service Admin {
   // User Management
@@ -108,4 +152,8 @@ service Admin {
   // Statistics
   rpc GetUserCount(GetUserCountRequest) returns (GetUserCountResponse);
   rpc GetEventCount(GetEventCountRequest) returns (GetEventCountResponse);
+
+  // Index Management
+  rpc CreateIndex(CreateIndexRequest) returns (CreateIndexResponse);
+  rpc DropIndex(DropIndexRequest)     returns (DropIndexResponse);
 }
