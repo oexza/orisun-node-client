@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { EventStoreClient } from '../src';
 
 async function testTokenCaching() {
@@ -37,7 +38,7 @@ async function testTokenCaching() {
       },
       events: [
         {
-          eventId: 'token-test-event-1',
+          eventId: randomUUID(),
           eventType: 'TokenTestEvent',
           data: { message: 'Testing token caching', timestamp: new Date().toISOString() },
           metadata: { source: 'integration-test' }
@@ -84,6 +85,7 @@ async function testTokenCaching() {
     console.error('   • Authentication credentials incorrect');
     console.error('   • Token extraction/caching logic issue');
     console.error('   • Network connectivity problem');
+    throw error;
   } finally {
     client.close();
     console.log('🔌 Client connection closed');
@@ -91,4 +93,7 @@ async function testTokenCaching() {
 }
 
 // Run the test
-testTokenCaching().catch(console.error);
+testTokenCaching().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
