@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const crypto_1 = require("crypto");
 const src_1 = require("../src");
 async function testTokenCaching() {
     console.log('🧪 Testing token caching with real gRPC server...\n');
@@ -34,7 +35,7 @@ async function testTokenCaching() {
             },
             events: [
                 {
-                    eventId: 'token-test-event-1',
+                    eventId: (0, crypto_1.randomUUID)(),
                     eventType: 'TokenTestEvent',
                     data: { message: 'Testing token caching', timestamp: new Date().toISOString() },
                     metadata: { source: 'integration-test' }
@@ -76,6 +77,7 @@ async function testTokenCaching() {
         console.error('   • Authentication credentials incorrect');
         console.error('   • Token extraction/caching logic issue');
         console.error('   • Network connectivity problem');
+        throw error;
     }
     finally {
         client.close();
@@ -83,5 +85,8 @@ async function testTokenCaching() {
     }
 }
 // Run the test
-testTokenCaching().catch(console.error);
+testTokenCaching().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+});
 //# sourceMappingURL=integration-test.js.map
