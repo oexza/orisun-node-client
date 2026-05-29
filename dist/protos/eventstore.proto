@@ -83,9 +83,55 @@ message CatchUpSubscribeToEventStoreRequest {
 message PingRequest {}
 message PingResponse {}
 
+enum ValueType {
+  TEXT = 0;
+  NUMERIC = 1;
+  BOOLEAN = 2;
+  TIMESTAMPTZ = 3;
+}
+
+enum ConditionCombinator {
+  AND = 0;
+  OR = 1;
+}
+
+// IndexField describes one key to include in the index expression.
+// Multiple fields produce a composite index.
+message IndexField {
+  string    json_key = 1;
+  ValueType value_type = 2;
+}
+
+// IndexCondition describes one predicate in the partial-index filter.
+// Multiple conditions are combined with condition_combinator.
+message IndexCondition {
+  string key = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message CreateIndexRequest {
+  string                  boundary = 1;
+  string                  name = 2;
+  repeated IndexField     fields = 3;
+  repeated IndexCondition conditions = 4;
+  ConditionCombinator     condition_combinator = 5;
+}
+
+message CreateIndexResponse {}
+
+message DropIndexRequest {
+  string boundary = 1;
+  string name = 2;
+}
+
+message DropIndexResponse {}
+
 service EventStore {
   rpc SaveEvents(SaveEventsRequest) returns (WriteResult) {}
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse) {}
   rpc CatchUpSubscribeToEvents(CatchUpSubscribeToEventStoreRequest) returns (stream Event) {}
   rpc Ping(PingRequest) returns (PingResponse) {}
+  rpc CreateIndex(CreateIndexRequest) returns (CreateIndexResponse) {}
+  rpc DropIndex(DropIndexRequest) returns (DropIndexResponse) {}
 }

@@ -7,7 +7,7 @@
 import * as jspb from "google-protobuf";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
 
-export class Position extends jspb.Message { 
+export class Position extends jspb.Message {
     getCommitPosition(): number;
     setCommitPosition(value: number): Position;
     getPreparePosition(): number;
@@ -30,7 +30,7 @@ export namespace Position {
     }
 }
 
-export class Tag extends jspb.Message { 
+export class Tag extends jspb.Message {
     getKey(): string;
     setKey(value: string): Tag;
     getValue(): string;
@@ -53,7 +53,7 @@ export namespace Tag {
     }
 }
 
-export class Criterion extends jspb.Message { 
+export class Criterion extends jspb.Message {
     clearTagsList(): void;
     getTagsList(): Array<Tag>;
     setTagsList(value: Array<Tag>): Criterion;
@@ -75,7 +75,7 @@ export namespace Criterion {
     }
 }
 
-export class Query extends jspb.Message { 
+export class Query extends jspb.Message {
     clearCriteriaList(): void;
     getCriteriaList(): Array<Criterion>;
     setCriteriaList(value: Array<Criterion>): Query;
@@ -97,7 +97,7 @@ export namespace Query {
     }
 }
 
-export class EventToSave extends jspb.Message { 
+export class EventToSave extends jspb.Message {
     getEventId(): string;
     setEventId(value: string): EventToSave;
     getEventType(): string;
@@ -126,7 +126,7 @@ export namespace EventToSave {
     }
 }
 
-export class Event extends jspb.Message { 
+export class Event extends jspb.Message {
     getEventId(): string;
     setEventId(value: string): Event;
     getEventType(): string;
@@ -167,7 +167,7 @@ export namespace Event {
     }
 }
 
-export class WriteResult extends jspb.Message { 
+export class WriteResult extends jspb.Message {
 
     hasLogPosition(): boolean;
     clearLogPosition(): void;
@@ -190,7 +190,7 @@ export namespace WriteResult {
     }
 }
 
-export class SaveQuery extends jspb.Message { 
+export class SaveQuery extends jspb.Message {
 
     hasExpectedPosition(): boolean;
     clearExpectedPosition(): void;
@@ -219,7 +219,7 @@ export namespace SaveQuery {
     }
 }
 
-export class SaveEventsRequest extends jspb.Message { 
+export class SaveEventsRequest extends jspb.Message {
     getBoundary(): string;
     setBoundary(value: string): SaveEventsRequest;
 
@@ -250,7 +250,7 @@ export namespace SaveEventsRequest {
     }
 }
 
-export class GetEventsRequest extends jspb.Message { 
+export class GetEventsRequest extends jspb.Message {
 
     hasQuery(): boolean;
     clearQuery(): void;
@@ -288,7 +288,7 @@ export namespace GetEventsRequest {
     }
 }
 
-export class GetEventsResponse extends jspb.Message { 
+export class GetEventsResponse extends jspb.Message {
     clearEventsList(): void;
     getEventsList(): Array<Event>;
     setEventsList(value: Array<Event>): GetEventsResponse;
@@ -310,7 +310,7 @@ export namespace GetEventsResponse {
     }
 }
 
-export class CatchUpSubscribeToEventStoreRequest extends jspb.Message { 
+export class CatchUpSubscribeToEventStoreRequest extends jspb.Message {
 
     hasAfterPosition(): boolean;
     clearAfterPosition(): void;
@@ -345,7 +345,7 @@ export namespace CatchUpSubscribeToEventStoreRequest {
     }
 }
 
-export class PingRequest extends jspb.Message { 
+export class PingRequest extends jspb.Message {
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PingRequest.AsObject;
@@ -362,7 +362,7 @@ export namespace PingRequest {
     }
 }
 
-export class PingResponse extends jspb.Message { 
+export class PingResponse extends jspb.Message {
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): PingResponse.AsObject;
@@ -379,7 +379,161 @@ export namespace PingResponse {
     }
 }
 
+export class IndexField extends jspb.Message {
+    getJsonKey(): string;
+    setJsonKey(value: string): IndexField;
+    getValueType(): ValueType;
+    setValueType(value: ValueType): IndexField;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): IndexField.AsObject;
+    static toObject(includeInstance: boolean, msg: IndexField): IndexField.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: IndexField, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): IndexField;
+    static deserializeBinaryFromReader(message: IndexField, reader: jspb.BinaryReader): IndexField;
+}
+
+export namespace IndexField {
+    export type AsObject = {
+        jsonKey: string,
+        valueType: ValueType,
+    }
+}
+
+export class IndexCondition extends jspb.Message {
+    getKey(): string;
+    setKey(value: string): IndexCondition;
+    getOperator(): string;
+    setOperator(value: string): IndexCondition;
+    getValue(): string;
+    setValue(value: string): IndexCondition;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): IndexCondition.AsObject;
+    static toObject(includeInstance: boolean, msg: IndexCondition): IndexCondition.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: IndexCondition, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): IndexCondition;
+    static deserializeBinaryFromReader(message: IndexCondition, reader: jspb.BinaryReader): IndexCondition;
+}
+
+export namespace IndexCondition {
+    export type AsObject = {
+        key: string,
+        operator: string,
+        value: string,
+    }
+}
+
+export class CreateIndexRequest extends jspb.Message {
+    getBoundary(): string;
+    setBoundary(value: string): CreateIndexRequest;
+    getName(): string;
+    setName(value: string): CreateIndexRequest;
+    clearFieldsList(): void;
+    getFieldsList(): Array<IndexField>;
+    setFieldsList(value: Array<IndexField>): CreateIndexRequest;
+    addFields(value?: IndexField, index?: number): IndexField;
+    clearConditionsList(): void;
+    getConditionsList(): Array<IndexCondition>;
+    setConditionsList(value: Array<IndexCondition>): CreateIndexRequest;
+    addConditions(value?: IndexCondition, index?: number): IndexCondition;
+    getConditionCombinator(): ConditionCombinator;
+    setConditionCombinator(value: ConditionCombinator): CreateIndexRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): CreateIndexRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: CreateIndexRequest): CreateIndexRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: CreateIndexRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): CreateIndexRequest;
+    static deserializeBinaryFromReader(message: CreateIndexRequest, reader: jspb.BinaryReader): CreateIndexRequest;
+}
+
+export namespace CreateIndexRequest {
+    export type AsObject = {
+        boundary: string,
+        name: string,
+        fieldsList: Array<IndexField.AsObject>,
+        conditionsList: Array<IndexCondition.AsObject>,
+        conditionCombinator: ConditionCombinator,
+    }
+}
+
+export class CreateIndexResponse extends jspb.Message {
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): CreateIndexResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: CreateIndexResponse): CreateIndexResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: CreateIndexResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): CreateIndexResponse;
+    static deserializeBinaryFromReader(message: CreateIndexResponse, reader: jspb.BinaryReader): CreateIndexResponse;
+}
+
+export namespace CreateIndexResponse {
+    export type AsObject = {
+    }
+}
+
+export class DropIndexRequest extends jspb.Message {
+    getBoundary(): string;
+    setBoundary(value: string): DropIndexRequest;
+    getName(): string;
+    setName(value: string): DropIndexRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): DropIndexRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: DropIndexRequest): DropIndexRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: DropIndexRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): DropIndexRequest;
+    static deserializeBinaryFromReader(message: DropIndexRequest, reader: jspb.BinaryReader): DropIndexRequest;
+}
+
+export namespace DropIndexRequest {
+    export type AsObject = {
+        boundary: string,
+        name: string,
+    }
+}
+
+export class DropIndexResponse extends jspb.Message {
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): DropIndexResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: DropIndexResponse): DropIndexResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: DropIndexResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): DropIndexResponse;
+    static deserializeBinaryFromReader(message: DropIndexResponse, reader: jspb.BinaryReader): DropIndexResponse;
+}
+
+export namespace DropIndexResponse {
+    export type AsObject = {
+    }
+}
+
 export enum Direction {
     ASC = 0,
     DESC = 1,
+}
+
+export enum ValueType {
+    TEXT = 0,
+    NUMERIC = 1,
+    BOOLEAN = 2,
+    TIMESTAMPTZ = 3,
+}
+
+export enum ConditionCombinator {
+    AND = 0,
+    OR = 1,
 }

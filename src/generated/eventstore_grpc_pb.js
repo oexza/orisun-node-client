@@ -15,6 +15,50 @@ function deserialize_orisun_CatchUpSubscribeToEventStoreRequest(buffer_arg) {
   return eventstore_pb.CatchUpSubscribeToEventStoreRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_orisun_CreateIndexRequest(arg) {
+  if (!(arg instanceof eventstore_pb.CreateIndexRequest)) {
+    throw new Error('Expected argument of type orisun.CreateIndexRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_CreateIndexRequest(buffer_arg) {
+  return eventstore_pb.CreateIndexRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_CreateIndexResponse(arg) {
+  if (!(arg instanceof eventstore_pb.CreateIndexResponse)) {
+    throw new Error('Expected argument of type orisun.CreateIndexResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_CreateIndexResponse(buffer_arg) {
+  return eventstore_pb.CreateIndexResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_DropIndexRequest(arg) {
+  if (!(arg instanceof eventstore_pb.DropIndexRequest)) {
+    throw new Error('Expected argument of type orisun.DropIndexRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_DropIndexRequest(buffer_arg) {
+  return eventstore_pb.DropIndexRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_DropIndexResponse(arg) {
+  if (!(arg instanceof eventstore_pb.DropIndexResponse)) {
+    throw new Error('Expected argument of type orisun.DropIndexResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_DropIndexResponse(buffer_arg) {
+  return eventstore_pb.DropIndexResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_orisun_Event(arg) {
   if (!(arg instanceof eventstore_pb.Event)) {
     throw new Error('Expected argument of type orisun.Event');
@@ -137,6 +181,28 @@ var EventStoreService = exports['orisun.EventStore'] = {
     requestDeserialize: deserialize_orisun_PingRequest,
     responseSerialize: serialize_orisun_PingResponse,
     responseDeserialize: deserialize_orisun_PingResponse,
+  },
+  createIndex: {
+    path: '/orisun.EventStore/CreateIndex',
+    requestStream: false,
+    responseStream: false,
+    requestType: eventstore_pb.CreateIndexRequest,
+    responseType: eventstore_pb.CreateIndexResponse,
+    requestSerialize: serialize_orisun_CreateIndexRequest,
+    requestDeserialize: deserialize_orisun_CreateIndexRequest,
+    responseSerialize: serialize_orisun_CreateIndexResponse,
+    responseDeserialize: deserialize_orisun_CreateIndexResponse,
+  },
+  dropIndex: {
+    path: '/orisun.EventStore/DropIndex',
+    requestStream: false,
+    responseStream: false,
+    requestType: eventstore_pb.DropIndexRequest,
+    responseType: eventstore_pb.DropIndexResponse,
+    requestSerialize: serialize_orisun_DropIndexRequest,
+    requestDeserialize: deserialize_orisun_DropIndexRequest,
+    responseSerialize: serialize_orisun_DropIndexResponse,
+    responseDeserialize: deserialize_orisun_DropIndexResponse,
   },
 };
 

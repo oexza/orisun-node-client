@@ -7,6 +7,14 @@ export {
   SubscribeRequest,
   WriteResult,
   Position,
+  ValueType,
+  ConditionCombinator,
+  IndexField,
+  IndexCondition,
+  CreateIndexRequest,
+  CreateIndexResponse,
+  DropIndexRequest,
+  DropIndexResponse,
   EventStoreClientOptions,
   Logger
 } from './client';
@@ -28,14 +36,6 @@ export {
   GetUserCountResponse,
   GetEventCountRequest,
   GetEventCountResponse,
-  ValueType,
-  ConditionCombinator,
-  IndexField,
-  IndexCondition,
-  CreateIndexRequest,
-  CreateIndexResponse,
-  DropIndexRequest,
-  DropIndexResponse,
   AdminClientOptions
 } from './admin-client';
 

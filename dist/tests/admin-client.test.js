@@ -43,8 +43,6 @@ const mockListUsers = jest.fn();
 const mockValidateCredentials = jest.fn();
 const mockGetUserCount = jest.fn();
 const mockGetEventCount = jest.fn();
-const mockCreateIndex = jest.fn();
-const mockDropIndex = jest.fn();
 const mockAdminClient = {
     createUser: mockCreateUser,
     deleteUser: mockDeleteUser,
@@ -53,8 +51,6 @@ const mockAdminClient = {
     validateCredentials: mockValidateCredentials,
     getUserCount: mockGetUserCount,
     getEventCount: mockGetEventCount,
-    createIndex: mockCreateIndex,
-    dropIndex: mockDropIndex,
 };
 const mockClient = jest.fn().mockImplementation(() => mockAdminClient);
 jest.mock('@grpc/grpc-js', () => ({
@@ -197,28 +193,6 @@ beforeEach(() => {
             })
         };
         callback(null, { count: '100' });
-        return mockCall;
-    });
-    mockCreateIndex.mockImplementation((request, metadata, callback) => {
-        const mockCall = {
-            on: jest.fn((event, handler) => {
-                if (event === 'metadata') {
-                    handler(new grpc.Metadata());
-                }
-            })
-        };
-        callback(null, {});
-        return mockCall;
-    });
-    mockDropIndex.mockImplementation((request, metadata, callback) => {
-        const mockCall = {
-            on: jest.fn((event, handler) => {
-                if (event === 'metadata') {
-                    handler(new grpc.Metadata());
-                }
-            })
-        };
-        callback(null, {});
         return mockCall;
     });
 });
@@ -515,104 +489,6 @@ describe('AdminClient', () => {
             await expect(client.getEventCount(request)).rejects.toThrow('Boundary is required');
         });
     });
-    describe('createIndex', () => {
-        it('should create index successfully', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                name: 'test-index',
-                fields: [
-                    { jsonKey: 'eventType', valueType: src_1.ValueType.TEXT },
-                    { jsonKey: 'timestamp', valueType: src_1.ValueType.TIMESTAMPTZ }
-                ]
-            };
-            const response = await client.createIndex(request);
-            expect(response).toBeDefined();
-            expect(mockCreateIndex).toHaveBeenCalledWith({
-                boundary: 'test-boundary',
-                name: 'test-index',
-                fields: [
-                    { json_key: 'eventType', value_type: src_1.ValueType.TEXT },
-                    { json_key: 'timestamp', value_type: src_1.ValueType.TIMESTAMPTZ }
-                ],
-                conditions: [],
-                condition_combinator: src_1.ConditionCombinator.AND
-            }, expect.any(Object), expect.any(Function));
-        });
-        it('should create index with conditions', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                name: 'filtered-index',
-                fields: [{ jsonKey: 'userId', valueType: src_1.ValueType.TEXT }],
-                conditions: [
-                    { key: 'eventType', operator: '=', value: 'UserCreated' }
-                ],
-                conditionCombinator: src_1.ConditionCombinator.AND
-            };
-            const response = await client.createIndex(request);
-            expect(response).toBeDefined();
-            expect(mockCreateIndex).toHaveBeenCalledWith(expect.objectContaining({
-                boundary: 'test-boundary',
-                name: 'filtered-index',
-                conditions: [{ key: 'eventType', operator: '=', value: 'UserCreated' }],
-                condition_combinator: src_1.ConditionCombinator.AND
-            }), expect.any(Object), expect.any(Function));
-        });
-        it('should throw error when request is null', async () => {
-            await expect(client.createIndex(null)).rejects.toThrow('CreateIndexRequest cannot be null or undefined');
-        });
-        it('should throw error when boundary is missing', async () => {
-            const request = {
-                name: 'test-index',
-                fields: [{ jsonKey: 'test', valueType: src_1.ValueType.TEXT }]
-            };
-            await expect(client.createIndex(request)).rejects.toThrow('Boundary is required');
-        });
-        it('should throw error when name is missing', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                fields: [{ jsonKey: 'test', valueType: src_1.ValueType.TEXT }]
-            };
-            await expect(client.createIndex(request)).rejects.toThrow('Index name is required');
-        });
-        it('should throw error when fields is empty', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                name: 'test-index',
-                fields: []
-            };
-            await expect(client.createIndex(request)).rejects.toThrow('Fields must be a non-empty array');
-        });
-        it('should throw error when fields is not an array', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                name: 'test-index',
-                fields: 'invalid'
-            };
-            await expect(client.createIndex(request)).rejects.toThrow('Fields must be a non-empty array');
-        });
-    });
-    describe('dropIndex', () => {
-        it('should drop index successfully', async () => {
-            const request = {
-                boundary: 'test-boundary',
-                name: 'test-index'
-            };
-            const response = await client.dropIndex(request);
-            expect(response).toBeDefined();
-            expect(mockDropIndex).toHaveBeenCalledWith({ boundary: 'test-boundary', name: 'test-index' }, expect.any(Object), expect.any(Function));
-        });
-        it('should throw error when request is null', async () => {
-            await expect(client.dropIndex(null)).rejects.toThrow('DropIndexRequest cannot be null or undefined');
-        });
-        it('should throw error when boundary is missing', async () => {
-            const request = { name: 'test-index' };
-            await expect(client.dropIndex(request)).rejects.toThrow('Boundary is required');
-        });
-        it('should throw error when name is missing', async () => {
-            const request = { boundary: 'test-boundary' };
-            await expect(client.dropIndex(request)).rejects.toThrow('Index name is required');
-        });
-    });
     describe('token caching', () => {
         it('should cache token from createUser response', async () => {
             mockCreateUser.mockImplementationOnce((request, metadata, callback) => {
@@ -795,21 +671,6 @@ describe('AdminClient', () => {
         it('should throw error when calling healthCheck after dispose', async () => {
             client.close();
             await expect(client.healthCheck()).rejects.toThrow('Client has been disposed');
-        });
-        it('should throw error when calling createIndex after dispose', async () => {
-            client.close();
-            await expect(client.createIndex({
-                boundary: 'test',
-                name: 'test-index',
-                fields: [{ jsonKey: 'test', valueType: src_1.ValueType.TEXT }]
-            })).rejects.toThrow('Client has been disposed');
-        });
-        it('should throw error when calling dropIndex after dispose', async () => {
-            client.close();
-            await expect(client.dropIndex({
-                boundary: 'test',
-                name: 'test-index'
-            })).rejects.toThrow('Client has been disposed');
         });
     });
 });

@@ -51,6 +51,40 @@ export interface SubscribeRequest {
 export interface WriteResult {
     logPosition: Position;
 }
+export declare enum ValueType {
+    TEXT = "TEXT",
+    NUMERIC = "NUMERIC",
+    BOOLEAN = "BOOLEAN",
+    TIMESTAMPTZ = "TIMESTAMPTZ"
+}
+export declare enum ConditionCombinator {
+    AND = "AND",
+    OR = "OR"
+}
+export interface IndexField {
+    jsonKey: string;
+    valueType: ValueType;
+}
+export interface IndexCondition {
+    key: string;
+    operator: string;
+    value: string;
+}
+export interface CreateIndexRequest {
+    boundary: string;
+    name: string;
+    fields: IndexField[];
+    conditions?: IndexCondition[];
+    conditionCombinator?: ConditionCombinator;
+}
+export interface CreateIndexResponse {
+}
+export interface DropIndexRequest {
+    boundary: string;
+    name: string;
+}
+export interface DropIndexResponse {
+}
 /**
  * Logger interface for client logging
  */
@@ -156,6 +190,8 @@ export declare class EventStoreClient {
      * @returns Promise<void> Resolves if the server responds successfully
      */
     ping(): Promise<void>;
+    createIndex(request: CreateIndexRequest): Promise<CreateIndexResponse>;
+    dropIndex(request: DropIndexRequest): Promise<DropIndexResponse>;
     /**
      * Check if the client is connected to the server
      * @returns Promise<boolean> True if connected, false otherwise
