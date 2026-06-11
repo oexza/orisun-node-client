@@ -4,12 +4,14 @@ import * as grpc from '@grpc/grpc-js';
 // Mock gRPC and protobuf modules
 const mockSaveEvents = jest.fn();
 const mockGetEvents = jest.fn();
+const mockGetLatestByCriteria = jest.fn();
 const mockCatchUpSubscribeToEvents = jest.fn();
 const mockPing = jest.fn();
 
 const mockEventStoreClient = {
     saveEvents: mockSaveEvents,
     getEvents: mockGetEvents,
+    getLatestByCriteria: mockGetLatestByCriteria,
     catchUpSubscribeToEvents: mockCatchUpSubscribeToEvents,
     ping: mockPing,
 };
@@ -84,6 +86,38 @@ beforeEach(() => {
                 ]
             });
         }
+        return mockCall;
+    });
+
+    mockGetLatestByCriteria.mockImplementation((request, metadata, callback) => {
+        const mockCall = {
+            on: jest.fn((event, handler) => {
+                if (event === 'metadata') {
+                    handler(new grpc.Metadata());
+                }
+            })
+        };
+
+        callback(null, {
+            results: [
+                {
+                    criterion: request.criteria[0],
+                    event: {
+                        event_id: 'acct-1-balance',
+                        event_type: 'MoneyCredited',
+                        data: JSON.stringify({account_id: 'acct-1', balance: 100}),
+                        metadata: JSON.stringify({source: 'test'}),
+                        position: {commit_position: '12', prepare_position: '12'},
+                        date_created: {seconds: '1704067200', nanos: 0}
+                    }
+                },
+                {
+                    criterion: request.criteria[1]
+                }
+            ],
+            context_position: {commit_position: '12', prepare_position: '12'}
+        });
+
         return mockCall;
     });
 
@@ -281,12 +315,8 @@ describe('EventStoreClient', () => {
             });
         });
 
-        it('should handle version range parameters', async () => {
+        it('should handle position paging parameters', async () => {
             const request = {
-                stream: {
-                    name: 'test-stream',
-                    fromVersion: 1
-                },
                 fromPosition: {commitPosition: 1, preparePosition: 1} as Position,
                 count: 5,
                 direction: 'ASC' as 'ASC',
@@ -295,6 +325,55 @@ describe('EventStoreClient', () => {
 
             const events = await client.getEvents(request);
             expect(events).toHaveLength(1);
+        });
+    });
+
+    describe('getLatestByCriteria', () => {
+        it('should retrieve the latest event per criterion with context position', async () => {
+            const response = await client.getLatestByCriteria({
+                boundary: 'accounts',
+                criteria: [
+                    {tags: [{key: 'account_id', value: 'acct-1'}]},
+                    {tags: [{key: 'account_id', value: 'acct-2'}]}
+                ]
+            });
+
+            expect(response.contextPosition).toEqual({
+                commitPosition: 12,
+                preparePosition: 12
+            });
+            expect(response.results).toHaveLength(2);
+            expect(response.results[0].event).toEqual({
+                eventId: 'acct-1-balance',
+                eventType: 'MoneyCredited',
+                data: {account_id: 'acct-1', balance: 100},
+                metadata: {source: 'test'},
+                position: {
+                    commitPosition: 12,
+                    preparePosition: 12
+                },
+                dateCreated: '2024-01-01T00:00:00.000Z'
+            });
+            expect(response.results[1].event).toBeUndefined();
+
+            expect(mockGetLatestByCriteria).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    boundary: 'accounts',
+                    criteria: [
+                        {tags: [{key: 'account_id', value: 'acct-1'}]},
+                        {tags: [{key: 'account_id', value: 'acct-2'}]}
+                    ]
+                }),
+                expect.any(Object),
+                expect.any(Function)
+            );
+        });
+
+        it('should reject empty latest-by-criteria requests', async () => {
+            await expect(client.getLatestByCriteria({
+                boundary: 'accounts',
+                criteria: []
+            })).rejects.toThrow('At least one criterion is required');
         });
     });
 
@@ -525,6 +604,51 @@ describe('EventStoreClient', () => {
             });
 
             await client.getEvents(request);
+        });
+
+        it('should cache token from getLatestByCriteria response', async () => {
+            mockGetLatestByCriteria.mockImplementationOnce((request, metadata, callback) => {
+                const responseMetadata = {
+                    get: jest.fn((key: string) => {
+                        if (key === 'x-auth-token') {
+                            return ['latest-token'];
+                        }
+                        return [];
+                    })
+                };
+
+                const mockCall = {
+                    on: jest.fn((event, handler) => {
+                        if (event === 'metadata') {
+                            handler(responseMetadata);
+                        }
+                    })
+                };
+
+                callback(null, {
+                    results: [],
+                    context_position: {commit_position: '-1', prepare_position: '-1'}
+                });
+
+                return mockCall;
+            });
+
+            const request = {
+                boundary: 'accounts',
+                criteria: [{tags: [{key: 'account_id', value: 'acct-1'}]}]
+            };
+
+            await client.getLatestByCriteria(request);
+
+            mockGetLatestByCriteria.mockImplementationOnce((request, metadata, callback) => {
+                expect(metadata.get('x-auth-token')).toContain('latest-token');
+                callback(null, {
+                    results: [],
+                    context_position: {commit_position: '-1', prepare_position: '-1'}
+                });
+            });
+
+            await client.getLatestByCriteria(request);
         });
 
         it('should use cached token for subscriptions', async () => {

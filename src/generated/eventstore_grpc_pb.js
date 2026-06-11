@@ -92,6 +92,28 @@ function deserialize_orisun_GetEventsResponse(buffer_arg) {
   return eventstore_pb.GetEventsResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_orisun_GetLatestByCriteriaRequest(arg) {
+  if (!(arg instanceof eventstore_pb.GetLatestByCriteriaRequest)) {
+    throw new Error('Expected argument of type orisun.GetLatestByCriteriaRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_GetLatestByCriteriaRequest(buffer_arg) {
+  return eventstore_pb.GetLatestByCriteriaRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_GetLatestByCriteriaResponse(arg) {
+  if (!(arg instanceof eventstore_pb.GetLatestByCriteriaResponse)) {
+    throw new Error('Expected argument of type orisun.GetLatestByCriteriaResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_GetLatestByCriteriaResponse(buffer_arg) {
+  return eventstore_pb.GetLatestByCriteriaResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_orisun_PingRequest(arg) {
   if (!(arg instanceof eventstore_pb.PingRequest)) {
     throw new Error('Expected argument of type orisun.PingRequest');
@@ -159,6 +181,17 @@ var EventStoreService = exports['orisun.EventStore'] = {
     requestDeserialize: deserialize_orisun_GetEventsRequest,
     responseSerialize: serialize_orisun_GetEventsResponse,
     responseDeserialize: deserialize_orisun_GetEventsResponse,
+  },
+  getLatestByCriteria: {
+    path: '/orisun.EventStore/GetLatestByCriteria',
+    requestStream: false,
+    responseStream: false,
+    requestType: eventstore_pb.GetLatestByCriteriaRequest,
+    responseType: eventstore_pb.GetLatestByCriteriaResponse,
+    requestSerialize: serialize_orisun_GetLatestByCriteriaRequest,
+    requestDeserialize: deserialize_orisun_GetLatestByCriteriaRequest,
+    responseSerialize: serialize_orisun_GetLatestByCriteriaResponse,
+    responseDeserialize: deserialize_orisun_GetLatestByCriteriaResponse,
   },
   catchUpSubscribeToEvents: {
     path: '/orisun.EventStore/CatchUpSubscribeToEvents',

@@ -379,6 +379,88 @@ export namespace PingResponse {
     }
 }
 
+export class GetLatestByCriteriaRequest extends jspb.Message {
+    getBoundary(): string;
+    setBoundary(value: string): GetLatestByCriteriaRequest;
+    clearCriteriaList(): void;
+    getCriteriaList(): Array<Criterion>;
+    setCriteriaList(value: Array<Criterion>): GetLatestByCriteriaRequest;
+    addCriteria(value?: Criterion, index?: number): Criterion;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetLatestByCriteriaRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: GetLatestByCriteriaRequest): GetLatestByCriteriaRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetLatestByCriteriaRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetLatestByCriteriaRequest;
+    static deserializeBinaryFromReader(message: GetLatestByCriteriaRequest, reader: jspb.BinaryReader): GetLatestByCriteriaRequest;
+}
+
+export namespace GetLatestByCriteriaRequest {
+    export type AsObject = {
+        boundary: string,
+        criteriaList: Array<Criterion.AsObject>,
+    }
+}
+
+export class LatestCriterionResult extends jspb.Message {
+
+    hasCriterion(): boolean;
+    clearCriterion(): void;
+    getCriterion(): Criterion | undefined;
+    setCriterion(value?: Criterion): LatestCriterionResult;
+
+    hasEvent(): boolean;
+    clearEvent(): void;
+    getEvent(): Event | undefined;
+    setEvent(value?: Event): LatestCriterionResult;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): LatestCriterionResult.AsObject;
+    static toObject(includeInstance: boolean, msg: LatestCriterionResult): LatestCriterionResult.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: LatestCriterionResult, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): LatestCriterionResult;
+    static deserializeBinaryFromReader(message: LatestCriterionResult, reader: jspb.BinaryReader): LatestCriterionResult;
+}
+
+export namespace LatestCriterionResult {
+    export type AsObject = {
+        criterion?: Criterion.AsObject,
+        event?: Event.AsObject,
+    }
+}
+
+export class GetLatestByCriteriaResponse extends jspb.Message {
+    clearResultsList(): void;
+    getResultsList(): Array<LatestCriterionResult>;
+    setResultsList(value: Array<LatestCriterionResult>): GetLatestByCriteriaResponse;
+    addResults(value?: LatestCriterionResult, index?: number): LatestCriterionResult;
+
+    hasContextPosition(): boolean;
+    clearContextPosition(): void;
+    getContextPosition(): Position | undefined;
+    setContextPosition(value?: Position): GetLatestByCriteriaResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetLatestByCriteriaResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: GetLatestByCriteriaResponse): GetLatestByCriteriaResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetLatestByCriteriaResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetLatestByCriteriaResponse;
+    static deserializeBinaryFromReader(message: GetLatestByCriteriaResponse, reader: jspb.BinaryReader): GetLatestByCriteriaResponse;
+}
+
+export namespace GetLatestByCriteriaResponse {
+    export type AsObject = {
+        resultsList: Array<LatestCriterionResult.AsObject>,
+        contextPosition?: Position.AsObject,
+    }
+}
+
 export class IndexField extends jspb.Message { 
     getJsonKey(): string;
     setJsonKey(value: string): IndexField;

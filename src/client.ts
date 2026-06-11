@@ -56,6 +56,21 @@ export interface GetEventsRequest {
     boundary: string;
 }
 
+export interface GetLatestByCriteriaRequest {
+    boundary: string;
+    criteria: Criterion[];
+}
+
+export interface LatestCriterionResult {
+    criterion: Criterion;
+    event?: Event;
+}
+
+export interface GetLatestByCriteriaResponse {
+    results: LatestCriterionResult[];
+    contextPosition: Position;
+}
+
 export interface SubscribeRequest {
     afterPosition?: Position;
     query?: Query;
@@ -362,6 +377,10 @@ export class EventStoreClient {
      * @param operation Optional description of the operation for logging
      */
     private setupTokenCaching(call: any, operation?: string): void {
+        if (!call || typeof call.on !== 'function') {
+            return;
+        }
+
         // In @grpc/grpc-js, we need to listen for the 'metadata' event on the call
         call.on('metadata', (metadata: grpc.Metadata) => {
             this.logger.debug('Response metadata:', metadata);
@@ -376,6 +395,37 @@ export class EventStoreClient {
                 }
             }
         });
+    }
+
+    private mapEvent(event: any): Event {
+        const position = {
+            commitPosition: Number(event.position?.commit_position || '0'),
+            preparePosition: Number(event.position?.prepare_position || '0')
+        };
+        const dateCreated = event.date_created
+            ? new Date(Number(event.date_created.seconds || '0') * 1000 + Math.floor(Number(event.date_created.nanos || 0) / 1000000)).toISOString()
+            : new Date().toISOString();
+
+        try {
+            return {
+                eventId: event.event_id,
+                eventType: event.event_type,
+                data: JSON.parse(event.data),
+                metadata: JSON.parse(event.metadata || '{}'),
+                position,
+                dateCreated
+            };
+        } catch (parseError) {
+            this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
+            return {
+                eventId: event.event_id,
+                eventType: event.event_type,
+                data: event.data,
+                metadata: event.metadata || '{}',
+                position,
+                dateCreated
+            };
+        }
     }
 
     /**
@@ -547,35 +597,7 @@ export class EventStoreClient {
                 return [];
             }
 
-            const events = response.events.map((event: any) => {
-                try {
-                    return {
-                        eventId: event.event_id,
-                        eventType: event.event_type,
-                        data: JSON.parse(event.data),
-                        metadata: JSON.parse(event.metadata || '{}'),
-                        position: {
-                            commitPosition: Number(event.position?.commit_position || '0'),
-                            preparePosition: Number(event.position?.prepare_position || '0')
-                        },
-                        dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
-                    };
-                } catch (parseError) {
-                    this.logger.error(`Failed to parse event data or metadata: ${(parseError as Error).message}`);
-                    // Return event with unparsed data to avoid losing the event
-                    return {
-                        eventId: event.event_id,
-                        eventType: event.event_type,
-                        data: event.data, // Raw string
-                        metadata: event.metadata || '{}', // Raw string
-                        position: {
-                            commitPosition: Number(event.position?.commit_position || '0'),
-                            preparePosition: Number(event.position?.prepare_position || '0')
-                        },
-                        dateCreated: event.date_created ? new Date(Number(event.date_created.seconds) * 1000 + Math.floor(event.date_created.nanos / 1000000)).toISOString() : new Date().toISOString()
-                    };
-                }
-            });
+            const events = response.events.map((event: any) => this.mapEvent(event));
 
             this.logger.debug(`Successfully retrieved ${events.length} events`);
             return events;
@@ -590,6 +612,78 @@ export class EventStoreClient {
             (enhancedError as any).originalError = error;
             (enhancedError as any).boundary = request.boundary;
 
+            throw enhancedError;
+        }
+    }
+
+    /**
+     * Get the latest event matching each criterion from one server-side read snapshot.
+     *
+     * Use the returned contextPosition as SaveEvents.query.expectedPosition with
+     * the same combined criteria. Independent getEvents calls are not equivalent
+     * for multi-criterion command contexts because they observe separate snapshots.
+     */
+    async getLatestByCriteria(request: GetLatestByCriteriaRequest): Promise<GetLatestByCriteriaResponse> {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+
+        if (!request) {
+            throw new Error('GetLatestByCriteriaRequest cannot be null or undefined');
+        }
+
+        if (!request.boundary) {
+            throw new Error('Boundary is required');
+        }
+
+        if (!request.criteria || !Array.isArray(request.criteria) || request.criteria.length === 0) {
+            throw new Error('At least one criterion is required');
+        }
+
+        request.criteria.forEach((criterion, index) => {
+            if (!criterion || !criterion.tags || !Array.isArray(criterion.tags) || criterion.tags.length === 0) {
+                throw new Error(`Criterion at index ${index} must include at least one tag`);
+            }
+        });
+
+        const grpcRequest = {
+            boundary: request.boundary,
+            criteria: request.criteria
+        };
+
+        try {
+            const metadata = this.createAuthMetadata('get latest by criteria');
+
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.getLatestByCriteria(grpcRequest, metadata, (error: any, response: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(response);
+                });
+
+                this.setupTokenCaching(call, 'get latest by criteria response');
+            });
+
+            return {
+                results: (response.results || []).map((result: any) => ({
+                    criterion: result.criterion,
+                    event: result.event && result.event.event_id ? this.mapEvent(result.event) : undefined
+                })),
+                contextPosition: {
+                    commitPosition: Number(response.context_position?.commit_position || '-1'),
+                    preparePosition: Number(response.context_position?.prepare_position || '-1')
+                }
+            };
+        } catch (error) {
+            this.logger.error(`Failed to get latest events by criteria:`, error);
+            const enhancedError = new Error(
+                `Failed to get latest events by criteria: ${(error as Error).message}`
+            );
+            enhancedError.stack = (error as Error).stack;
+            (enhancedError as any).originalError = error;
+            (enhancedError as any).boundary = request.boundary;
             throw enhancedError;
         }
     }

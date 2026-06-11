@@ -83,6 +83,32 @@ message CatchUpSubscribeToEventStoreRequest {
 message PingRequest {}
 message PingResponse {}
 
+// GetLatestByCriteria returns the latest event matching each criterion,
+// assembled by the server from ONE consistent read snapshot, plus the
+// context_position to use as SaveEvents.query.expected_position with the same
+// combined criteria. Assembling the same context from independent GetEvents
+// calls is not equivalent: an event can commit between the calls with a
+// position below the observed maximum, and a scalar expected position cannot
+// detect that.
+message GetLatestByCriteriaRequest {
+  string boundary = 1;
+  repeated Criterion criteria = 2;
+}
+
+message LatestCriterionResult {
+  Criterion criterion = 1;
+  // Unset when no event matches the criterion.
+  Event event = 2;
+}
+
+message GetLatestByCriteriaResponse {
+  // One result per request criterion, in request order.
+  repeated LatestCriterionResult results = 1;
+  // Max position across the events observed in the same read snapshot;
+  // the not-exists sentinel (-1, -1) when nothing matched.
+  Position context_position = 2;
+}
+
 enum ValueType {
   TEXT = 0;
   NUMERIC = 1;
@@ -130,6 +156,7 @@ message DropIndexResponse {}
 service EventStore {
   rpc SaveEvents(SaveEventsRequest) returns (WriteResult) {}
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse) {}
+  rpc GetLatestByCriteria(GetLatestByCriteriaRequest) returns (GetLatestByCriteriaResponse) {}
   rpc CatchUpSubscribeToEvents(CatchUpSubscribeToEventStoreRequest) returns (stream Event) {}
   rpc Ping(PingRequest) returns (PingResponse) {}
   rpc CreateIndex(CreateIndexRequest) returns (CreateIndexResponse) {}

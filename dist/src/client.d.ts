@@ -42,6 +42,18 @@ export interface GetEventsRequest {
     direction?: 'ASC' | 'DESC';
     boundary: string;
 }
+export interface GetLatestByCriteriaRequest {
+    boundary: string;
+    criteria: Criterion[];
+}
+export interface LatestCriterionResult {
+    criterion: Criterion;
+    event?: Event;
+}
+export interface GetLatestByCriteriaResponse {
+    results: LatestCriterionResult[];
+    contextPosition: Position;
+}
 export interface SubscribeRequest {
     afterPosition?: Position;
     query?: Query;
@@ -162,6 +174,7 @@ export declare class EventStoreClient {
      * @param operation Optional description of the operation for logging
      */
     private setupTokenCaching;
+    private mapEvent;
     /**
      * Save events to a stream
      * @throws {Error} If the request is invalid or the operation fails
@@ -173,6 +186,14 @@ export declare class EventStoreClient {
      * @throws {Error} If the request is invalid or the operation fails
      */
     getEvents(request: GetEventsRequest): Promise<Event[]>;
+    /**
+     * Get the latest event matching each criterion from one server-side read snapshot.
+     *
+     * Use the returned contextPosition as SaveEvents.query.expectedPosition with
+     * the same combined criteria. Independent getEvents calls are not equivalent
+     * for multi-criterion command contexts because they observe separate snapshots.
+     */
+    getLatestByCriteria(request: GetLatestByCriteriaRequest): Promise<GetLatestByCriteriaResponse>;
     /**
      * Subscribe to events using async iteration (for await...of)
      * @param request The subscription request

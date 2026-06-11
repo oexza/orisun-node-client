@@ -11,6 +11,7 @@ import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/t
 interface IEventStoreService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
     saveEvents: IEventStoreService_ISaveEvents;
     getEvents: IEventStoreService_IGetEvents;
+    getLatestByCriteria: IEventStoreService_IGetLatestByCriteria;
     catchUpSubscribeToEvents: IEventStoreService_ICatchUpSubscribeToEvents;
     ping: IEventStoreService_IPing;
     createIndex: IEventStoreService_ICreateIndex;
@@ -34,6 +35,15 @@ interface IEventStoreService_IGetEvents extends grpc.MethodDefinition<eventstore
     requestDeserialize: grpc.deserialize<eventstore_pb.GetEventsRequest>;
     responseSerialize: grpc.serialize<eventstore_pb.GetEventsResponse>;
     responseDeserialize: grpc.deserialize<eventstore_pb.GetEventsResponse>;
+}
+interface IEventStoreService_IGetLatestByCriteria extends grpc.MethodDefinition<eventstore_pb.GetLatestByCriteriaRequest, eventstore_pb.GetLatestByCriteriaResponse> {
+    path: "/orisun.EventStore/GetLatestByCriteria";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<eventstore_pb.GetLatestByCriteriaRequest>;
+    requestDeserialize: grpc.deserialize<eventstore_pb.GetLatestByCriteriaRequest>;
+    responseSerialize: grpc.serialize<eventstore_pb.GetLatestByCriteriaResponse>;
+    responseDeserialize: grpc.deserialize<eventstore_pb.GetLatestByCriteriaResponse>;
 }
 interface IEventStoreService_ICatchUpSubscribeToEvents extends grpc.MethodDefinition<eventstore_pb.CatchUpSubscribeToEventStoreRequest, eventstore_pb.Event> {
     path: "/orisun.EventStore/CatchUpSubscribeToEvents";
@@ -77,6 +87,7 @@ export const EventStoreService: IEventStoreService;
 export interface IEventStoreServer extends grpc.UntypedServiceImplementation {
     saveEvents: grpc.handleUnaryCall<eventstore_pb.SaveEventsRequest, eventstore_pb.WriteResult>;
     getEvents: grpc.handleUnaryCall<eventstore_pb.GetEventsRequest, eventstore_pb.GetEventsResponse>;
+    getLatestByCriteria: grpc.handleUnaryCall<eventstore_pb.GetLatestByCriteriaRequest, eventstore_pb.GetLatestByCriteriaResponse>;
     catchUpSubscribeToEvents: grpc.handleServerStreamingCall<eventstore_pb.CatchUpSubscribeToEventStoreRequest, eventstore_pb.Event>;
     ping: grpc.handleUnaryCall<eventstore_pb.PingRequest, eventstore_pb.PingResponse>;
     createIndex: grpc.handleUnaryCall<eventstore_pb.CreateIndexRequest, eventstore_pb.CreateIndexResponse>;
@@ -90,6 +101,9 @@ export interface IEventStoreClient {
     getEvents(request: eventstore_pb.GetEventsRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
+    getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
+    getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
+    getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
     catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     ping(request: eventstore_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;
@@ -111,6 +125,9 @@ export class EventStoreClient extends grpc.Client implements IEventStoreClient {
     public getEvents(request: eventstore_pb.GetEventsRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     public getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
     public getEvents(request: eventstore_pb.GetEventsRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetEventsResponse) => void): grpc.ClientUnaryCall;
+    public getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
+    public getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
+    public getLatestByCriteria(request: eventstore_pb.GetLatestByCriteriaRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: eventstore_pb.GetLatestByCriteriaResponse) => void): grpc.ClientUnaryCall;
     public catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     public catchUpSubscribeToEvents(request: eventstore_pb.CatchUpSubscribeToEventStoreRequest, metadata?: grpc.Metadata, options?: Partial<grpc.CallOptions>): grpc.ClientReadableStream<eventstore_pb.Event>;
     public ping(request: eventstore_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: eventstore_pb.PingResponse) => void): grpc.ClientUnaryCall;

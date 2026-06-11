@@ -4,8 +4,9 @@ A Node.js client library for interacting with the Orisun Event Store, providing 
 
 ## Features
 
-- **Event Storage**: Save events to streams with optimistic concurrency control
-- **Event Retrieval**: Read events from streams with version filtering
+- **Event Storage**: Save events with Command Context Consistency
+- **Event Retrieval**: Read events by content criteria and position
+- **Latest Context Reads**: Fetch the latest event per criterion from one consistency snapshot
 - **Event Subscriptions**: Subscribe to real-time event streams
 - **Multi-tenancy**: Support for boundary-based tenant isolation
 - **TypeScript Support**: Full TypeScript definitions included
@@ -105,34 +106,46 @@ const client = new EventStoreClient({
   // Logging configuration
   enableLogging: true, // Enable or disable logging
   logger: console, // Custom logger (must implement debug, info, warn, error methods)
-  
-  // Keep-alive options for long-lived connections
-  keepaliveTimeMs: 30000, // Send ping every 30 seconds
-  keepaliveTimeoutMs: 10000, // Wait 10 seconds for ping response
-  keepalivePermitWithoutCalls: true // Allow pings when idle
 });
 
-// Save events
-await client.saveEvents({
-  streamId: 'user-123',
-  expectedVersion: 0,
+const accountCriteria = {
+  criteria: [
+    { tags: [{ key: 'account_id', value: 'acct-1' }] }
+  ]
+};
+
+// Save events with Command Context Consistency
+const write = await client.saveEvents({
+  boundary: 'accounts',
+  query: {
+    expectedPosition: { commitPosition: -1, preparePosition: -1 },
+    subsetQuery: accountCriteria
+  },
   events: [{
-    id: 'event-1',
-    type: 'UserCreated',
-    data: { userId: 'user-123', email: 'john@example.com' }
-  }],
-  boundary: 'tenant-1'
+    eventId: 'acct-1-opened',
+    eventType: 'AccountOpened',
+    data: { account_id: 'acct-1', balance: 0 }
+  }]
 });
 
-// Read events
+// Read events by criteria
 const events = await client.getEvents({
-  streamId: 'user-123',
-  boundary: 'tenant-1'
+  boundary: 'accounts',
+  query: accountCriteria,
+  count: 100,
+  direction: 'ASC'
 });
+
+// Read the latest event per criterion for carried-state command decisions
+const latest = await client.getLatestByCriteria({
+  boundary: 'accounts',
+  criteria: accountCriteria.criteria
+});
+const expectedPosition = latest.contextPosition;
 
 // Subscribe to events
 const subscription = client.subscribeToEvents(
-  { streamId: 'user-123', boundary: 'tenant-1' },
+  { subscriberName: 'account-projector', boundary: 'accounts' },
   (event) => console.log('Received:', event)
 );
 ```
@@ -156,82 +169,108 @@ new EventStoreClient(options?: EventStoreClientOptions)
 - `password` (string): Authentication password (default: 'changeit')
 - `loadBalancingPolicy` (string): Load balancing strategy - 'round_robin' or 'pick_first' (default: 'round_robin')
 
-- `enableLogging` (boolean): Enable or disable logging (default: true)
-- `logger` (object): Custom logger implementation (default: console)
+- `enableLogging` (boolean): Enable or disable logging (default: false)
+- `logger` (object): Custom logger implementation
   - Must implement `debug`, `info`, `warn`, and `error` methods
-- `keepaliveTimeMs` (number): Time in milliseconds between keep-alive pings (default: 30000)
-- `keepaliveTimeoutMs` (number): Time in milliseconds to wait for ping response (default: 10000)
-- `keepalivePermitWithoutCalls` (boolean): Allow keep-alive pings when there are no active calls (default: true)
 
 #### Methods
 
-##### saveEvents(request: SaveEventsRequest): Promise<void>
+##### saveEvents(request: SaveEventsRequest): Promise<WriteResult>
 
-Save events to a stream with optimistic concurrency control.
+Save events with Command Context Consistency.
 
 ```typescript
-await client.saveEvents({
-  streamId: 'order-456',
-  expectedVersion: 2, // Expected current version of the stream
+const result = await client.saveEvents({
+  boundary: 'orders',
+  query: {
+    expectedPosition: { commitPosition: 12, preparePosition: 8 },
+    subsetQuery: {
+      criteria: [
+        { tags: [{ key: 'customer_id', value: 'c-1' }] }
+      ]
+    }
+  },
   events: [
     {
-      id: 'event-3',
-      type: 'OrderShipped',
-      data: { orderId: 'order-456', trackingNumber: 'TRK123' },
+      eventId: 'order-456-shipped',
+      eventType: 'OrderShipped',
+      data: { order_id: 'order-456', customer_id: 'c-1', tracking_number: 'TRK123' },
       metadata: { source: 'shipping-service' }
     }
-  ],
-  boundary: 'tenant-1'
+  ]
 });
 ```
 
 ##### getEvents(request: GetEventsRequest): Promise<Event[]>
 
-Retrieve events from a stream.
+Retrieve events by boundary, criteria, and position.
 
 ```typescript
-// Get all events
+// Get events for one account
 const allEvents = await client.getEvents({
-  streamId: 'order-456',
-  boundary: 'tenant-1'
+  boundary: 'accounts',
+  query: {
+    criteria: [
+      { tags: [{ key: 'account_id', value: 'acct-1' }] }
+    ]
+  },
+  count: 100,
+  direction: 'ASC'
 });
 
-// Get events from specific version range
+// Page forward from a position
 const recentEvents = await client.getEvents({
-  streamId: 'order-456',
-  fromVersion: 5,
-  toVersion: 10,
-  boundary: 'tenant-1'
+  boundary: 'accounts',
+  fromPosition: { commitPosition: 100, preparePosition: 42 },
+  count: 100,
+  direction: 'ASC'
 });
+```
+
+##### getLatestByCriteria(request: GetLatestByCriteriaRequest): Promise<GetLatestByCriteriaResponse>
+
+Retrieve the latest event matching each criterion from one server-side snapshot. Use `contextPosition` as the next `SaveEvents.query.expectedPosition` with the same combined criteria.
+
+```typescript
+const latest = await client.getLatestByCriteria({
+  boundary: 'accounts',
+  criteria: [
+    { tags: [{ key: 'account_id', value: 'acct-1' }] },
+    { tags: [{ key: 'account_id', value: 'acct-2' }] }
+  ]
+});
+
+const acct1 = latest.results[0].event;
+const expectedPosition = latest.contextPosition;
 ```
 
 ##### subscribeToEvents(request: SubscribeRequest, onEvent: (event: Event) => void, onError?: (error: Error) => void): grpc.ClientReadableStream
 
-Subscribe to real-time events from a stream or all streams.
+Subscribe to catch-up and live events.
 
 ```typescript
-// Subscribe to specific stream
 const subscription = client.subscribeToEvents(
   {
-    streamId: 'user-123',
-    boundary: 'tenant-1'
+    subscriberName: 'account-projector',
+    boundary: 'accounts'
   },
   (event) => {
-    console.log('New event:', event.type, event.data);
+    console.log('New event:', event.eventType, event.data);
   },
   (error) => {
     console.error('Subscription error:', error);
   }
 );
 
-// Subscribe to all streams from a specific position
+// Subscribe to all events from a specific position
 const allStreamsSubscription = client.subscribeToEvents(
   {
-    fromPosition: 1000,
-    boundary: 'tenant-1'
+    subscriberName: 'account-projector',
+    afterPosition: { commitPosition: 1000, preparePosition: 1000 },
+    boundary: 'accounts'
   },
   (event) => {
-    console.log('Event from any stream:', event);
+    console.log('Event:', event);
   }
 );
 
@@ -260,119 +299,143 @@ client.close();
 
 ### Types
 
-#### Event
-
 ```typescript
 interface Event {
-  id: string;
-  type: string;
+  eventId: string;
+  eventType: string;
   data: any;
-  metadata?: Record<string, string>;
-  streamId: string;
-  streamVersion: number;
-  position: number;
-  timestamp: string;
+  metadata?: Record<string, any>;
+  position: Position;
+  dateCreated: string;
 }
-```
 
-#### SaveEventsRequest
+interface EventToSave {
+  eventId: string;
+  eventType: string;
+  data: any;
+  metadata?: Record<string, any>;
+}
 
-```typescript
+interface Position {
+  commitPosition: number;
+  preparePosition: number;
+}
+
+interface Tag {
+  key: string;
+  value: string;
+}
+
+interface Criterion {
+  tags: Tag[];
+}
+
+interface Query {
+  criteria: Criterion[];
+}
+
 interface SaveEventsRequest {
-  streamId: string;
-  expectedVersion: number;
-  events: Omit<Event, 'streamId' | 'streamVersion' | 'position' | 'timestamp'>[];
   boundary: string;
+  query: {
+    expectedPosition: Position;
+    subsetQuery?: Query;
+  };
+  events: EventToSave[];
 }
-```
 
-#### GetEventsRequest
-
-```typescript
 interface GetEventsRequest {
-  streamId: string;
-  fromVersion?: number;
-  toVersion?: number;
   boundary: string;
+  query?: Query;
+  fromPosition?: Position;
+  count?: number;
+  direction?: 'ASC' | 'DESC';
 }
-```
 
-#### SubscribeRequest
-
-```typescript
-interface SubscribeRequest {
-  streamId?: string;
-  fromPosition?: number;
+interface GetLatestByCriteriaRequest {
   boundary: string;
+  criteria: Criterion[];
+}
+
+interface SubscribeRequest {
+  subscriberName: string;
+  boundary: string;
+  afterPosition?: Position;
+  query?: Query;
 }
 ```
 
 ## Examples
 
-### Basic Event Sourcing
+### Carried-State Command
 
 ```typescript
-import { EventStoreClient } from 'orisun-node-client';
+import { EventStoreClient, Query } from '@orisun/eventstore-client';
 
-class UserAggregate {
+class AccountLedger {
   private client: EventStoreClient;
-  private streamId: string;
-  private version: number = 0;
-  private boundary: string;
+  private boundary = 'accounts';
 
-  constructor(userId: string, boundary: string) {
-    this.client = new EventStoreClient();
-    this.streamId = `user-${userId}`;
-    this.boundary = boundary;
+  constructor() {
+    this.client = new EventStoreClient({
+      host: 'localhost',
+      port: 5005,
+      username: 'admin',
+      password: 'changeit'
+    });
   }
 
-  async createUser(email: string, name: string) {
+  private accountQuery(accountId: string): Query {
+    return {
+      criteria: [
+        { tags: [{ key: 'account_id', value: accountId }] }
+      ]
+    };
+  }
+
+  async open(accountId: string) {
+    const query = this.accountQuery(accountId);
     await this.client.saveEvents({
-      streamId: this.streamId,
-      expectedVersion: this.version,
+      boundary: this.boundary,
+      query: {
+        expectedPosition: { commitPosition: -1, preparePosition: -1 },
+        subsetQuery: query
+      },
       events: [{
-        id: `user-created-${Date.now()}`,
-        type: 'UserCreated',
-        data: { email, name }
-      }],
-      boundary: this.boundary
+        eventId: `${accountId}-opened`,
+        eventType: 'AccountOpened',
+        data: { account_id: accountId, balance: 0 }
+      }]
     });
-    this.version++;
   }
 
-  async updateEmail(newEmail: string) {
+  async debit(accountId: string, amount: number) {
+    const query = this.accountQuery(accountId);
+    const latest = await this.client.getLatestByCriteria({
+      boundary: this.boundary,
+      criteria: query.criteria
+    });
+
+    const currentBalance = latest.results[0].event?.data.balance ?? 0;
+    if (currentBalance < amount) {
+      throw new Error('Insufficient funds');
+    }
+
     await this.client.saveEvents({
-      streamId: this.streamId,
-      expectedVersion: this.version,
+      boundary: this.boundary,
+      query: {
+        expectedPosition: latest.contextPosition,
+        subsetQuery: query
+      },
       events: [{
-        id: `email-updated-${Date.now()}`,
-        type: 'EmailUpdated',
-        data: { newEmail }
-      }],
-      boundary: this.boundary
+        eventId: `${accountId}-debit-${Date.now()}`,
+        eventType: 'MoneyDebited',
+        data: {
+          account_id: accountId,
+          amount,
+          balance: currentBalance - amount
+        }
+      }]
     });
-    this.version++;
-  }
-
-  async loadFromHistory() {
-    const events = await this.client.getEvents({
-      streamId: this.streamId,
-      boundary: this.boundary
-    });
-    
-    // Apply events to rebuild state
-    events.forEach(event => {
-      switch (event.type) {
-        case 'UserCreated':
-          // Apply user creation logic
-          break;
-        case 'EmailUpdated':
-          // Apply email update logic
-          break;
-      }
-    });
-    
-    this.version = events.length;
   }
 }
 ```
@@ -380,28 +443,33 @@ class UserAggregate {
 ### Event Processing with Subscriptions
 
 ```typescript
-import { EventStoreClient, Event } from 'orisun-node-client';
+import { EventStoreClient, Event } from '@orisun/eventstore-client';
 
 class EventProcessor {
   private client: EventStoreClient;
 
   constructor() {
-    this.client = new EventStoreClient();
+    this.client = new EventStoreClient({
+      host: 'localhost',
+      port: 5005,
+      username: 'admin',
+      password: 'changeit'
+    });
   }
 
   startProcessing(boundary: string) {
     // Subscribe to all events in the boundary
     this.client.subscribeToEvents(
-      { boundary },
+      { subscriberName: 'projector', boundary },
       this.handleEvent.bind(this),
       this.handleError.bind(this)
     );
   }
 
   private async handleEvent(event: Event) {
-    console.log(`Processing event: ${event.type}`);
+    console.log(`Processing event: ${event.eventType}`);
     
-    switch (event.type) {
+    switch (event.eventType) {
       case 'UserCreated':
         await this.sendWelcomeEmail(event.data);
         break;
@@ -409,7 +477,7 @@ class EventProcessor {
         await this.processPayment(event.data);
         break;
       default:
-        console.log(`Unknown event type: ${event.type}`);
+        console.log(`Unknown event type: ${event.eventType}`);
     }
   }
 
@@ -437,15 +505,24 @@ The client throws standard JavaScript errors for various failure scenarios:
 ```typescript
 try {
   await client.saveEvents({
-    streamId: 'user-123',
-    expectedVersion: 5, // Wrong expected version
-    events: [/* events */],
-    boundary: 'tenant-1'
+    boundary: 'accounts',
+    query: {
+      expectedPosition: { commitPosition: 12, preparePosition: 12 },
+      subsetQuery: {
+        criteria: [
+          { tags: [{ key: 'account_id', value: 'acct-1' }] }
+        ]
+      }
+    },
+    events: [{
+      eventId: 'acct-1-debit',
+      eventType: 'MoneyDebited',
+      data: { account_id: 'acct-1', amount: 50, balance: 10 }
+    }]
   });
 } catch (error) {
-  if (error.message.includes('version')) {
-    console.error('Concurrency conflict - stream was modified');
-    // Handle optimistic concurrency failure
+  if (error.message.includes('AlreadyExists')) {
+    console.error('Concurrency conflict - re-read the context and retry');
   } else {
     console.error('Unexpected error:', error);
   }
