@@ -108,10 +108,18 @@ const client = new EventStoreClient({
   logger: console, // Custom logger (must implement debug, info, warn, error methods)
 });
 
-const accountCriteria = {
+const accountOpenedId = '018f2d5e-2001-7000-8000-000000000001';
+const accountRootCriteria = {
+  tags: [
+    { key: 'eventType', value: 'AccountOpened' },
+    { key: 'accountOpenedId', value: accountOpenedId },
+  ],
+};
+const accountHistoryQuery = {
   criteria: [
-    { tags: [{ key: 'account_id', value: 'acct-1' }] }
-  ]
+    accountRootCriteria,
+    { tags: [{ key: 'scopes.accountOpenedId', value: accountOpenedId }] },
+  ],
 };
 
 // Save events with Command Context Consistency
@@ -119,19 +127,19 @@ const write = await client.saveEvents({
   boundary: 'accounts',
   query: {
     expectedPosition: { commitPosition: -1, preparePosition: -1 },
-    subsetQuery: accountCriteria
+    subsetQuery: { criteria: [accountRootCriteria] }
   },
   events: [{
-    eventId: 'acct-1-opened',
+    eventId: accountOpenedId,
     eventType: 'AccountOpened',
-    data: { account_id: 'acct-1', balance: 0 }
+    data: { accountOpenedId, balance: 0 }
   }]
 });
 
 // Read events by criteria
 const events = await client.getEvents({
   boundary: 'accounts',
-  query: accountCriteria,
+  query: accountHistoryQuery,
   count: 100,
   direction: 'ASC'
 });
@@ -139,7 +147,7 @@ const events = await client.getEvents({
 // Read the latest event per criterion for carried-state command decisions
 const latest = await client.getLatestByCriteria({
   boundary: 'accounts',
-  criteria: accountCriteria.criteria
+  criteria: accountHistoryQuery.criteria
 });
 const expectedPosition = latest.contextPosition;
 
@@ -211,7 +219,11 @@ const allEvents = await client.getEvents({
   boundary: 'accounts',
   query: {
     criteria: [
-      { tags: [{ key: 'account_id', value: 'acct-1' }] }
+      { tags: [
+        { key: 'eventType', value: 'AccountOpened' },
+        { key: 'accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' },
+      ] },
+      { tags: [{ key: 'scopes.accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' }] },
     ]
   },
   count: 100,
@@ -235,12 +247,20 @@ Retrieve the latest event matching each criterion from one server-side snapshot.
 const latest = await client.getLatestByCriteria({
   boundary: 'accounts',
   criteria: [
-    { tags: [{ key: 'account_id', value: 'acct-1' }] },
-    { tags: [{ key: 'account_id', value: 'acct-2' }] }
+    { tags: [
+      { key: 'eventType', value: 'AccountOpened' },
+      { key: 'accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' },
+    ] },
+    { tags: [{ key: 'scopes.accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' }] },
+    { tags: [
+      { key: 'eventType', value: 'AccountOpened' },
+      { key: 'accountOpenedId', value: '018f2d5e-2002-7000-8000-000000000002' },
+    ] },
+    { tags: [{ key: 'scopes.accountOpenedId', value: '018f2d5e-2002-7000-8000-000000000002' }] }
   ]
 });
 
-const acct1 = latest.results[0].event;
+const acct1Movement = latest.results[1].event;
 const expectedPosition = latest.contextPosition;
 ```
 
@@ -384,38 +404,50 @@ class AccountLedger {
     });
   }
 
-  private accountQuery(accountId: string): Query {
+  private accountRootCriterion(accountOpenedId: string) {
     return {
-      criteria: [
-        { tags: [{ key: 'account_id', value: accountId }] }
-      ]
+      tags: [
+        { key: 'eventType', value: 'AccountOpened' },
+        { key: 'accountOpenedId', value: accountOpenedId },
+      ],
     };
   }
 
-  async open(accountId: string) {
-    const query = this.accountQuery(accountId);
+  private accountQuery(accountOpenedId: string): Query {
+    return {
+      criteria: [
+        this.accountRootCriterion(accountOpenedId),
+        { tags: [{ key: 'scopes.accountOpenedId', value: accountOpenedId }] },
+      ],
+    };
+  }
+
+  async open(accountOpenedId: string) {
+    const rootQuery = { criteria: [this.accountRootCriterion(accountOpenedId)] };
     await this.client.saveEvents({
       boundary: this.boundary,
       query: {
         expectedPosition: { commitPosition: -1, preparePosition: -1 },
-        subsetQuery: query
+        subsetQuery: rootQuery
       },
       events: [{
-        eventId: `${accountId}-opened`,
+        eventId: accountOpenedId,
         eventType: 'AccountOpened',
-        data: { account_id: accountId, balance: 0 }
+        data: { accountOpenedId, balance: 0 }
       }]
     });
   }
 
-  async debit(accountId: string, amount: number) {
-    const query = this.accountQuery(accountId);
+  async debit(accountOpenedId: string, amount: number, moneyDebitedId: string) {
+    const query = this.accountQuery(accountOpenedId);
     const latest = await this.client.getLatestByCriteria({
       boundary: this.boundary,
       criteria: query.criteria
     });
 
-    const currentBalance = latest.results[0].event?.data.balance ?? 0;
+    const currentBalance = latest.results[1].event?.data.balanceAfter
+      ?? latest.results[0].event?.data.balance
+      ?? 0;
     if (currentBalance < amount) {
       throw new Error('Insufficient funds');
     }
@@ -427,12 +459,13 @@ class AccountLedger {
         subsetQuery: query
       },
       events: [{
-        eventId: `${accountId}-debit-${Date.now()}`,
+        eventId: moneyDebitedId,
         eventType: 'MoneyDebited',
         data: {
-          account_id: accountId,
+          moneyDebitedId,
           amount,
-          balance: currentBalance - amount
+          balanceAfter: currentBalance - amount,
+          'scopes.accountOpenedId': accountOpenedId
         }
       }]
     });
@@ -510,14 +543,23 @@ try {
       expectedPosition: { commitPosition: 12, preparePosition: 12 },
       subsetQuery: {
         criteria: [
-          { tags: [{ key: 'account_id', value: 'acct-1' }] }
+          { tags: [
+            { key: 'eventType', value: 'AccountOpened' },
+            { key: 'accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' },
+          ] },
+          { tags: [{ key: 'scopes.accountOpenedId', value: '018f2d5e-2001-7000-8000-000000000001' }] }
         ]
       }
     },
     events: [{
-      eventId: 'acct-1-debit',
+      eventId: '018f2d5e-2003-7000-8000-000000000003',
       eventType: 'MoneyDebited',
-      data: { account_id: 'acct-1', amount: 50, balance: 10 }
+      data: {
+        moneyDebitedId: '018f2d5e-2003-7000-8000-000000000003',
+        amount: 50,
+        balanceAfter: 10,
+        'scopes.accountOpenedId': '018f2d5e-2001-7000-8000-000000000001'
+      }
     }]
   });
 } catch (error) {
