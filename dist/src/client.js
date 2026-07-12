@@ -82,6 +82,8 @@ class NoopLogger {
     error(message, ...args) {
     }
 }
+const ORISUN_DEFAULT_MAX_MESSAGE_SIZE = 100 * 1024 * 1024;
+const ORISUN_DEFAULT_FLOW_CONTROL_WINDOW = 1024 * 1024;
 /**
  * orisun client operations
  */
@@ -90,7 +92,7 @@ class EventStoreClient {
         this.disposed = false;
         // Validate options
         validateClientOptions(options);
-        const { host = 'localhost', port = 5005, target, credentials = grpc.credentials.createInsecure(), username = 'admin', password = 'changeit', loadBalancingPolicy = 'round_robin', logger, enableLogging = false } = options;
+        const { host = 'localhost', port = 5005, target, credentials = grpc.credentials.createInsecure(), username = 'admin', password = 'changeit', loadBalancingPolicy = 'round_robin', channelOptions: userChannelOptions = {}, logger, enableLogging = false } = options;
         // Initialize logger
         this.logger = enableLogging ? (logger || console) : new NoopLogger();
         // Load the protobuf definition
@@ -110,10 +112,14 @@ class EventStoreClient {
             // 'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
             // 'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
             // 'grpc.http2.max_pings_without_data': 0,
+            'grpc.max_receive_message_length': ORISUN_DEFAULT_MAX_MESSAGE_SIZE,
+            'grpc.max_send_message_length': ORISUN_DEFAULT_MAX_MESSAGE_SIZE,
+            'grpc-node.flow_control_window': ORISUN_DEFAULT_FLOW_CONTROL_WINDOW,
             'grpc.lb_policy_name': loadBalancingPolicy,
             'grpc.service_config': JSON.stringify({
                 loadBalancingConfig: [{ [loadBalancingPolicy]: {} }]
-            })
+            }),
+            ...userChannelOptions
         };
         // Determine the target string
         let targetString;

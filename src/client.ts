@@ -176,6 +176,13 @@ export interface EventStoreClientOptions {
     loadBalancingPolicy?: 'round_robin' | 'pick_first';
 
     /**
+     * Additional @grpc/grpc-js channel options. Orisun sets high-throughput
+     * defaults for message size and HTTP/2 flow control; values here override
+     * those defaults.
+     */
+    channelOptions?: grpc.ChannelOptions;
+
+    /**
      * Custom logger implementation
      */
     logger?: Logger;
@@ -227,6 +234,9 @@ class NoopLogger implements Logger {
     }
 }
 
+const ORISUN_DEFAULT_MAX_MESSAGE_SIZE = 100 * 1024 * 1024;
+const ORISUN_DEFAULT_FLOW_CONTROL_WINDOW = 1024 * 1024;
+
 /**
  * orisun client operations
  */
@@ -250,6 +260,7 @@ export class EventStoreClient {
             username = 'admin',
             password = 'changeit',
             loadBalancingPolicy = 'round_robin',
+            channelOptions: userChannelOptions = {},
             logger,
             enableLogging = false
         } = options;
@@ -270,16 +281,20 @@ export class EventStoreClient {
         const eventStoreProto = grpc.loadPackageDefinition(packageDefinition) as any;
 
         // Create the client with keep-alive options and load balancing
-        const channelOptions = {
+        const channelOptions: grpc.ChannelOptions = {
             // 'grpc.keepalive_time_ms': keepaliveTimeMs,
             // 'grpc.keepalive_timeout_ms': keepaliveTimeoutMs,
             // 'grpc.keepalive_permit_without_calls': keepalivePermitWithoutCalls ? 1 : 0,
             // 'grpc.http2.min_time_between_pings_ms': keepaliveTimeMs,
             // 'grpc.http2.max_pings_without_data': 0,
+            'grpc.max_receive_message_length': ORISUN_DEFAULT_MAX_MESSAGE_SIZE,
+            'grpc.max_send_message_length': ORISUN_DEFAULT_MAX_MESSAGE_SIZE,
+            'grpc-node.flow_control_window': ORISUN_DEFAULT_FLOW_CONTROL_WINDOW,
             'grpc.lb_policy_name': loadBalancingPolicy,
             'grpc.service_config': JSON.stringify({
                 loadBalancingConfig: [{[loadBalancingPolicy]: {}}]
-            })
+            }),
+            ...userChannelOptions
         };
 
         // Determine the target string

@@ -176,10 +176,35 @@ new EventStoreClient(options?: EventStoreClientOptions)
 - `username` (string): Authentication username (default: 'admin')
 - `password` (string): Authentication password (default: 'changeit')
 - `loadBalancingPolicy` (string): Load balancing strategy - 'round_robin' or 'pick_first' (default: 'round_robin')
-
+- `channelOptions` (grpc.ChannelOptions): Additional `@grpc/grpc-js` channel options. The client already sets Orisun's high-throughput defaults: 100 MB send/receive message size and a 1 MB HTTP/2 flow-control window. Values in `channelOptions` override those defaults.
 - `enableLogging` (boolean): Enable or disable logging (default: false)
 - `logger` (object): Custom logger implementation
   - Must implement `debug`, `info`, `warn`, and `error` methods
+
+### High-throughput writes
+
+Use one `EventStoreClient` instance per target and let it reuse its single gRPC channel. The client caches Orisun auth tokens after the first authenticated response, so hot `saveEvents` calls should use the cached token path rather than repeatedly sending Basic credentials.
+
+For burst imports or very high write volume, keep roughly 512-1024 `saveEvents` calls in flight instead of launching an unbounded number of concurrent RPCs. The server can process large bursts, but flooding one HTTP/2 connection with every pending write at once adds client-side scheduling and stream overhead.
+
+```typescript
+const maxInFlight = 1024;
+
+async function saveBurst(requests: SaveEventsRequest[]) {
+  let next = 0;
+
+  async function worker() {
+    while (next < requests.length) {
+      const request = requests[next++];
+      await client.saveEvents(request);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(maxInFlight, requests.length) }, worker)
+  );
+}
+```
 
 #### Methods
 

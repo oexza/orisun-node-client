@@ -210,6 +210,40 @@ describe('AdminClient', () => {
             expect(client).toBeInstanceOf(AdminClient);
         });
 
+        it('should configure high-throughput gRPC channel defaults', () => {
+            const tunedClient = new AdminClient({
+                host: 'localhost',
+                port: 5005,
+                username: 'admin',
+                password: 'changeit',
+            });
+            const channelOptions = mockClient.mock.calls[mockClient.mock.calls.length - 1][2];
+
+            expect(channelOptions).toMatchObject({
+                'grpc.max_receive_message_length': 100 * 1024 * 1024,
+                'grpc.max_send_message_length': 100 * 1024 * 1024,
+                'grpc-node.flow_control_window': 1024 * 1024,
+                'grpc.lb_policy_name': 'round_robin',
+            });
+            tunedClient.close();
+        });
+
+        it('should allow gRPC channel option overrides', () => {
+            const tunedClient = new AdminClient({
+                host: 'localhost',
+                port: 5005,
+                username: 'admin',
+                password: 'changeit',
+                channelOptions: {
+                    'grpc-node.flow_control_window': 2 * 1024 * 1024,
+                },
+            });
+            const channelOptions = mockClient.mock.calls[mockClient.mock.calls.length - 1][2];
+
+            expect(channelOptions['grpc-node.flow_control_window']).toBe(2 * 1024 * 1024);
+            tunedClient.close();
+        });
+
         it('should create client with load balancing options', () => {
             const clientWithLoadBalancing = new AdminClient({
                 host: 'localhost',

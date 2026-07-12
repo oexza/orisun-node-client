@@ -143,6 +143,12 @@ export interface EventStoreClientOptions {
      */
     loadBalancingPolicy?: 'round_robin' | 'pick_first';
     /**
+     * Additional @grpc/grpc-js channel options. Orisun sets high-throughput
+     * defaults for message size and HTTP/2 flow control; values here override
+     * those defaults.
+     */
+    channelOptions?: grpc.ChannelOptions;
+    /**
      * Custom logger implementation
      */
     logger?: Logger;
