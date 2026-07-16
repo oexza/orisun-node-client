@@ -1,7 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "@orisun/eventstore-client": "github:oexza/orisun-node-client"
+    "@orisun/eventstore-client": "github:OrisunLabs/orisun-node-client"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

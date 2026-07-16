@@ -21,12 +21,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oexza/orisun.git",
-    "directory": "clients/node"
+    "url": "https://github.com/OrisunLabs/orisun-node-client.git"
   },
-  "homepage": "https://github.com/oexza/orisun#readme",
+  "homepage": "https://github.com/OrisunLabs/orisun-node-client#readme",
   "bugs": {
-    "url": "https://github.com/oexza/orisun/issues"
+    "url": "https://github.com/OrisunLabs/orisun-node-client/issues"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.10.6",

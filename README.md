@@ -25,7 +25,7 @@ Add to your `package.json`:
 ```json
 {
   "dependencies": {
-    "@orisun/eventstore-client": "github:oexza/Orisun#main"
+    "@orisun/eventstore-client": "github:OrisunLabs/orisun-node-client#master"
   }
 }
 ```
@@ -39,7 +39,7 @@ npm install
 Or install directly:
 
 ```bash
-npm install github:oexza/Orisun#main
+npm install github:OrisunLabs/orisun-node-client#master
 ```
 
 The client will be installed from the `clients/node` directory in the repository (as specified in the package.json `repository.directory` field).
