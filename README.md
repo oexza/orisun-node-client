@@ -158,6 +158,58 @@ const subscription = client.subscribeToEvents(
 );
 ```
 
+## Boundary management
+
+Boundary definitions are commands recorded in the admin event log. The RPC
+returns the boundary in `PROVISIONING`; the server provisions its durable
+storage and publisher before emitting the activation event.
+
+```typescript
+import { AdminClient, BoundaryStatus } from '@orisun/eventstore-client';
+
+const admin = new AdminClient({
+  host: 'localhost',
+  port: 5005,
+  username: 'admin',
+  password: 'changeit',
+});
+
+const {boundary: definition} = await admin.createBoundary({
+  name: 'orders',
+  description: 'Order lifecycle events',
+  placement: { backend: 'postgres', namespace: 'public' },
+});
+
+const {boundary: imported} = await admin.importBoundary({
+  name: 'legacy_orders',
+  placement: { backend: 'postgres', namespace: 'legacy' },
+});
+
+// Definition commands return PROVISIONING. Wait before using EventStore APIs.
+let orders = definition;
+while (orders.status === BoundaryStatus.PROVISIONING) {
+  await new Promise(resolve => setTimeout(resolve, 100));
+  ({boundary: orders} = await admin.getBoundary('orders'));
+}
+if (orders.status !== BoundaryStatus.ACTIVE) {
+  throw new Error(`Boundary provisioning failed: ${orders.lastError}`);
+}
+
+const {boundaries} = await admin.listBoundaries();
+```
+
+`createBoundary` creates and migrates new physical storage. `importBoundary`
+registers storage that already exists and applies migrations idempotently.
+Both operations append durable definition events; a duplicate name returns
+`ALREADY_EXISTS`. Placement is backend-specific:
+
+- PostgreSQL/YugabyteDB: `{ backend: 'postgres', namespace: '<schema>' }`
+- SQLite: `{ backend: 'sqlite', namespace: '<boundary-name>' }`
+- FoundationDB: `{ backend: 'foundationdb', namespace: '<ORISUN_FDB_ROOT>' }`
+
+Failed provisioning is reported through `status === BoundaryStatus.FAILED` and
+`lastError`. The server retries failed definitions independently.
+
 ## API Reference
 
 ### EventStoreClient

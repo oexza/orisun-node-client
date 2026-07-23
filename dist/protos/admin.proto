@@ -2,10 +2,11 @@ syntax = "proto3";
 
 package orisun;
 
-option go_package = "github.com/OrisunLabs/Orisun/orisun";
+option go_package = "github.com/OrisunLabs/Orisun/orisun/grpcapi";
 option java_package = "com.orisun.admin";
 
 import "google/protobuf/timestamp.proto";
+import "eventstore.proto";
 
 // AdminUser represents a user in the system
 message AdminUser {
@@ -94,8 +95,81 @@ message GetEventCountResponse {
   int64 count = 1;
 }
 
+// BoundaryPlacementInput selects the durable backend and its physical
+// namespace (a PostgreSQL schema or SQLite database namespace).
+message BoundaryPlacementInput {
+  string backend = 1;
+  string namespace = 2;
+}
+
+enum BoundaryLifecycleStatus {
+  BOUNDARY_LIFECYCLE_STATUS_UNSPECIFIED = 0;
+  BOUNDARY_LIFECYCLE_STATUS_PROVISIONING = 1;
+  BOUNDARY_LIFECYCLE_STATUS_ACTIVE = 2;
+  BOUNDARY_LIFECYCLE_STATUS_FAILED = 3;
+}
+
+enum BoundaryRegistrationOrigin {
+  BOUNDARY_REGISTRATION_ORIGIN_UNSPECIFIED = 0;
+  BOUNDARY_REGISTRATION_ORIGIN_CREATED = 1;
+  BOUNDARY_REGISTRATION_ORIGIN_IMPORTED = 2;
+}
+
+message BoundaryInfo {
+  string name = 1;
+  string description = 2;
+  BoundaryPlacementInput placement = 3;
+  BoundaryLifecycleStatus status = 4;
+  BoundaryRegistrationOrigin origin = 5;
+  string last_error = 6;
+  Position definition_position = 7;
+  Position status_position = 8;
+}
+
+message CreateBoundaryRequest {
+  string name = 1;
+  string description = 2;
+  BoundaryPlacementInput placement = 3;
+}
+
+message CreateBoundaryResponse {
+  BoundaryInfo boundary = 1;
+}
+
+// ImportBoundary registers a physical boundary that already exists. The
+// normal provisioning handler validates/applies its migrations idempotently.
+message ImportBoundaryRequest {
+  string name = 1;
+  string description = 2;
+  BoundaryPlacementInput placement = 3;
+}
+
+message ImportBoundaryResponse {
+  BoundaryInfo boundary = 1;
+}
+
+message ListBoundariesRequest {}
+
+message ListBoundariesResponse {
+  repeated BoundaryInfo boundaries = 1;
+}
+
+message GetBoundaryRequest {
+  string name = 1;
+}
+
+message GetBoundaryResponse {
+  BoundaryInfo boundary = 1;
+}
+
 // Admin service provides user management and administrative operations
 service Admin {
+  // Boundary Management
+  rpc CreateBoundary(CreateBoundaryRequest) returns (CreateBoundaryResponse);
+  rpc ImportBoundary(ImportBoundaryRequest) returns (ImportBoundaryResponse);
+  rpc ListBoundaries(ListBoundariesRequest) returns (ListBoundariesResponse);
+  rpc GetBoundary(GetBoundaryRequest) returns (GetBoundaryResponse);
+
   // User Management
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);

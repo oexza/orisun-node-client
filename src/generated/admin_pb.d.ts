@@ -6,6 +6,7 @@
 
 import * as jspb from "google-protobuf";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
+import * as eventstore_pb from "./eventstore_pb";
 
 export class AdminUser extends jspb.Message { 
     getUserId(): string;
@@ -353,4 +354,276 @@ export namespace GetEventCountResponse {
     export type AsObject = {
         count: number,
     }
+}
+
+export class BoundaryPlacementInput extends jspb.Message {
+    getBackend(): string;
+    setBackend(value: string): BoundaryPlacementInput;
+    getNamespace(): string;
+    setNamespace(value: string): BoundaryPlacementInput;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): BoundaryPlacementInput.AsObject;
+    static toObject(includeInstance: boolean, msg: BoundaryPlacementInput): BoundaryPlacementInput.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: BoundaryPlacementInput, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): BoundaryPlacementInput;
+    static deserializeBinaryFromReader(message: BoundaryPlacementInput, reader: jspb.BinaryReader): BoundaryPlacementInput;
+}
+
+export namespace BoundaryPlacementInput {
+    export type AsObject = {
+        backend: string,
+        namespace: string,
+    }
+}
+
+export class BoundaryInfo extends jspb.Message {
+    getName(): string;
+    setName(value: string): BoundaryInfo;
+    getDescription(): string;
+    setDescription(value: string): BoundaryInfo;
+
+    hasPlacement(): boolean;
+    clearPlacement(): void;
+    getPlacement(): BoundaryPlacementInput | undefined;
+    setPlacement(value?: BoundaryPlacementInput): BoundaryInfo;
+    getStatus(): BoundaryLifecycleStatus;
+    setStatus(value: BoundaryLifecycleStatus): BoundaryInfo;
+    getOrigin(): BoundaryRegistrationOrigin;
+    setOrigin(value: BoundaryRegistrationOrigin): BoundaryInfo;
+    getLastError(): string;
+    setLastError(value: string): BoundaryInfo;
+
+    hasDefinitionPosition(): boolean;
+    clearDefinitionPosition(): void;
+    getDefinitionPosition(): eventstore_pb.Position | undefined;
+    setDefinitionPosition(value?: eventstore_pb.Position): BoundaryInfo;
+
+    hasStatusPosition(): boolean;
+    clearStatusPosition(): void;
+    getStatusPosition(): eventstore_pb.Position | undefined;
+    setStatusPosition(value?: eventstore_pb.Position): BoundaryInfo;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): BoundaryInfo.AsObject;
+    static toObject(includeInstance: boolean, msg: BoundaryInfo): BoundaryInfo.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: BoundaryInfo, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): BoundaryInfo;
+    static deserializeBinaryFromReader(message: BoundaryInfo, reader: jspb.BinaryReader): BoundaryInfo;
+}
+
+export namespace BoundaryInfo {
+    export type AsObject = {
+        name: string,
+        description: string,
+        placement?: BoundaryPlacementInput.AsObject,
+        status: BoundaryLifecycleStatus,
+        origin: BoundaryRegistrationOrigin,
+        lastError: string,
+        definitionPosition?: eventstore_pb.Position.AsObject,
+        statusPosition?: eventstore_pb.Position.AsObject,
+    }
+}
+
+export class CreateBoundaryRequest extends jspb.Message {
+    getName(): string;
+    setName(value: string): CreateBoundaryRequest;
+    getDescription(): string;
+    setDescription(value: string): CreateBoundaryRequest;
+
+    hasPlacement(): boolean;
+    clearPlacement(): void;
+    getPlacement(): BoundaryPlacementInput | undefined;
+    setPlacement(value?: BoundaryPlacementInput): CreateBoundaryRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): CreateBoundaryRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: CreateBoundaryRequest): CreateBoundaryRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: CreateBoundaryRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): CreateBoundaryRequest;
+    static deserializeBinaryFromReader(message: CreateBoundaryRequest, reader: jspb.BinaryReader): CreateBoundaryRequest;
+}
+
+export namespace CreateBoundaryRequest {
+    export type AsObject = {
+        name: string,
+        description: string,
+        placement?: BoundaryPlacementInput.AsObject,
+    }
+}
+
+export class CreateBoundaryResponse extends jspb.Message {
+
+    hasBoundary(): boolean;
+    clearBoundary(): void;
+    getBoundary(): BoundaryInfo | undefined;
+    setBoundary(value?: BoundaryInfo): CreateBoundaryResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): CreateBoundaryResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: CreateBoundaryResponse): CreateBoundaryResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: CreateBoundaryResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): CreateBoundaryResponse;
+    static deserializeBinaryFromReader(message: CreateBoundaryResponse, reader: jspb.BinaryReader): CreateBoundaryResponse;
+}
+
+export namespace CreateBoundaryResponse {
+    export type AsObject = {
+        boundary?: BoundaryInfo.AsObject,
+    }
+}
+
+export class ImportBoundaryRequest extends jspb.Message {
+    getName(): string;
+    setName(value: string): ImportBoundaryRequest;
+    getDescription(): string;
+    setDescription(value: string): ImportBoundaryRequest;
+
+    hasPlacement(): boolean;
+    clearPlacement(): void;
+    getPlacement(): BoundaryPlacementInput | undefined;
+    setPlacement(value?: BoundaryPlacementInput): ImportBoundaryRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ImportBoundaryRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: ImportBoundaryRequest): ImportBoundaryRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ImportBoundaryRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ImportBoundaryRequest;
+    static deserializeBinaryFromReader(message: ImportBoundaryRequest, reader: jspb.BinaryReader): ImportBoundaryRequest;
+}
+
+export namespace ImportBoundaryRequest {
+    export type AsObject = {
+        name: string,
+        description: string,
+        placement?: BoundaryPlacementInput.AsObject,
+    }
+}
+
+export class ImportBoundaryResponse extends jspb.Message {
+
+    hasBoundary(): boolean;
+    clearBoundary(): void;
+    getBoundary(): BoundaryInfo | undefined;
+    setBoundary(value?: BoundaryInfo): ImportBoundaryResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ImportBoundaryResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: ImportBoundaryResponse): ImportBoundaryResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ImportBoundaryResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ImportBoundaryResponse;
+    static deserializeBinaryFromReader(message: ImportBoundaryResponse, reader: jspb.BinaryReader): ImportBoundaryResponse;
+}
+
+export namespace ImportBoundaryResponse {
+    export type AsObject = {
+        boundary?: BoundaryInfo.AsObject,
+    }
+}
+
+export class ListBoundariesRequest extends jspb.Message {
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ListBoundariesRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: ListBoundariesRequest): ListBoundariesRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ListBoundariesRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ListBoundariesRequest;
+    static deserializeBinaryFromReader(message: ListBoundariesRequest, reader: jspb.BinaryReader): ListBoundariesRequest;
+}
+
+export namespace ListBoundariesRequest {
+    export type AsObject = {
+    }
+}
+
+export class ListBoundariesResponse extends jspb.Message {
+    clearBoundariesList(): void;
+    getBoundariesList(): Array<BoundaryInfo>;
+    setBoundariesList(value: Array<BoundaryInfo>): ListBoundariesResponse;
+    addBoundaries(value?: BoundaryInfo, index?: number): BoundaryInfo;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): ListBoundariesResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: ListBoundariesResponse): ListBoundariesResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: ListBoundariesResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): ListBoundariesResponse;
+    static deserializeBinaryFromReader(message: ListBoundariesResponse, reader: jspb.BinaryReader): ListBoundariesResponse;
+}
+
+export namespace ListBoundariesResponse {
+    export type AsObject = {
+        boundariesList: Array<BoundaryInfo.AsObject>,
+    }
+}
+
+export class GetBoundaryRequest extends jspb.Message {
+    getName(): string;
+    setName(value: string): GetBoundaryRequest;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetBoundaryRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: GetBoundaryRequest): GetBoundaryRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetBoundaryRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetBoundaryRequest;
+    static deserializeBinaryFromReader(message: GetBoundaryRequest, reader: jspb.BinaryReader): GetBoundaryRequest;
+}
+
+export namespace GetBoundaryRequest {
+    export type AsObject = {
+        name: string,
+    }
+}
+
+export class GetBoundaryResponse extends jspb.Message {
+
+    hasBoundary(): boolean;
+    clearBoundary(): void;
+    getBoundary(): BoundaryInfo | undefined;
+    setBoundary(value?: BoundaryInfo): GetBoundaryResponse;
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): GetBoundaryResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: GetBoundaryResponse): GetBoundaryResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: GetBoundaryResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): GetBoundaryResponse;
+    static deserializeBinaryFromReader(message: GetBoundaryResponse, reader: jspb.BinaryReader): GetBoundaryResponse;
+}
+
+export namespace GetBoundaryResponse {
+    export type AsObject = {
+        boundary?: BoundaryInfo.AsObject,
+    }
+}
+
+export enum BoundaryLifecycleStatus {
+    BOUNDARY_LIFECYCLE_STATUS_UNSPECIFIED = 0,
+    BOUNDARY_LIFECYCLE_STATUS_PROVISIONING = 1,
+    BOUNDARY_LIFECYCLE_STATUS_ACTIVE = 2,
+    BOUNDARY_LIFECYCLE_STATUS_FAILED = 3,
+}
+
+export enum BoundaryRegistrationOrigin {
+    BOUNDARY_REGISTRATION_ORIGIN_UNSPECIFIED = 0,
+    BOUNDARY_REGISTRATION_ORIGIN_CREATED = 1,
+    BOUNDARY_REGISTRATION_ORIGIN_IMPORTED = 2,
 }

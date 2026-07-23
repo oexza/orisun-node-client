@@ -138,6 +138,66 @@ export interface GetEventCountResponse {
     count: number;
 }
 
+export interface BoundaryPlacement {
+    backend: string;
+    namespace: string;
+}
+
+export enum BoundaryStatus {
+    PROVISIONING = 'PROVISIONING',
+    ACTIVE = 'ACTIVE',
+    FAILED = 'FAILED'
+}
+
+export enum BoundaryOrigin {
+    CREATED = 'CREATED',
+    IMPORTED = 'IMPORTED'
+}
+
+export interface BoundaryPosition {
+    commitPosition: number;
+    preparePosition: number;
+}
+
+export interface BoundaryInfo {
+    name: string;
+    description: string;
+    placement: BoundaryPlacement;
+    status: BoundaryStatus;
+    origin: BoundaryOrigin;
+    lastError: string;
+    definitionPosition?: BoundaryPosition;
+    statusPosition?: BoundaryPosition;
+}
+
+export interface CreateBoundaryRequest {
+    name: string;
+    description?: string;
+    placement: BoundaryPlacement;
+}
+
+export interface CreateBoundaryResponse {
+    boundary: BoundaryInfo;
+}
+
+export interface ImportBoundaryRequest {
+    name: string;
+    description?: string;
+    placement: BoundaryPlacement;
+}
+
+export interface ImportBoundaryResponse {
+    boundary: BoundaryInfo;
+}
+
+export interface ListBoundariesResponse {
+    boundaries: BoundaryInfo[];
+}
+
+export interface GetBoundaryResponse {
+    boundary: BoundaryInfo;
+}
+
 /**
  * Validates admin client options and throws errors for invalid configurations
  */
@@ -203,6 +263,32 @@ function parseAdminUser(user: any): AdminUser {
         roles: user.roles || [],
         createdAt: parseTimestamp(user.created_at),
         updatedAt: parseTimestamp(user.updated_at)
+    };
+}
+
+function parseBoundaryPosition(position: any): BoundaryPosition | undefined {
+    if (!position) {
+        return undefined;
+    }
+    return {
+        commitPosition: Number(position.commit_position),
+        preparePosition: Number(position.prepare_position)
+    };
+}
+
+function parseBoundaryInfo(boundary: any): BoundaryInfo {
+    return {
+        name: boundary.name,
+        description: boundary.description,
+        placement: {
+            backend: boundary.placement?.backend || '',
+            namespace: boundary.placement?.namespace || ''
+        },
+        status: String(boundary.status).replace('BOUNDARY_LIFECYCLE_STATUS_', '') as BoundaryStatus,
+        origin: String(boundary.origin).replace('BOUNDARY_REGISTRATION_ORIGIN_', '') as BoundaryOrigin,
+        lastError: boundary.last_error || '',
+        definitionPosition: parseBoundaryPosition(boundary.definition_position),
+        statusPosition: parseBoundaryPosition(boundary.status_position)
     };
 }
 
@@ -710,6 +796,109 @@ export class AdminClient {
         } catch (error) {
             this.logger.error(`Failed to get event count:`, error);
             throw new Error(`Failed to get event count: ${(error as Error).message}`);
+        }
+    }
+
+    /** Emit a definition event for a new boundary. */
+    async createBoundary(request: CreateBoundaryRequest): Promise<CreateBoundaryResponse> {
+        return this.writeBoundaryDefinition('createBoundary', 'create boundary', request);
+    }
+
+    /** Emit an import event for an existing physical boundary. */
+    async importBoundary(request: ImportBoundaryRequest): Promise<ImportBoundaryResponse> {
+        return this.writeBoundaryDefinition('importBoundary', 'import boundary', request);
+    }
+
+    /** List the current event-rebuilt boundary catalog. */
+    async listBoundaries(): Promise<ListBoundariesResponse> {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        try {
+            const metadata = this.createAuthMetadata('list boundaries');
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.listBoundaries({}, metadata, (error: any, value: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, 'list boundaries response');
+            });
+            return {boundaries: (response.boundaries || []).map(parseBoundaryInfo)};
+        } catch (error) {
+            this.logger.error('Failed to list boundaries:', error);
+            throw new Error(`Failed to list boundaries: ${(error as Error).message}`);
+        }
+    }
+
+    /** Get one boundary from the event-rebuilt catalog. */
+    async getBoundary(name: string): Promise<GetBoundaryResponse> {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!name) {
+            throw new Error('Boundary name is required');
+        }
+        try {
+            const metadata = this.createAuthMetadata('get boundary');
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client.getBoundary({name}, metadata, (error: any, value: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, 'get boundary response');
+            });
+            return {boundary: parseBoundaryInfo(response.boundary)};
+        } catch (error) {
+            this.logger.error(`Failed to get boundary '${name}':`, error);
+            throw new Error(`Failed to get boundary: ${(error as Error).message}`);
+        }
+    }
+
+    private async writeBoundaryDefinition(
+        method: 'createBoundary' | 'importBoundary',
+        operation: string,
+        request: CreateBoundaryRequest | ImportBoundaryRequest
+    ): Promise<CreateBoundaryResponse | ImportBoundaryResponse> {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!request?.name) {
+            throw new Error('Boundary name is required');
+        }
+        if (!request.placement?.backend || !request.placement?.namespace) {
+            throw new Error('Boundary placement backend and namespace are required');
+        }
+
+        const grpcRequest = {
+            name: request.name,
+            description: request.description || '',
+            placement: {
+                backend: request.placement.backend,
+                namespace: request.placement.namespace
+            }
+        };
+        try {
+            const metadata = this.createAuthMetadata(operation);
+            const response = await new Promise<any>((resolve, reject) => {
+                const call = this.client[method](grpcRequest, metadata, (error: any, value: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, `${operation} response`);
+            });
+            return {boundary: parseBoundaryInfo(response.boundary)};
+        } catch (error) {
+            this.logger.error(`Failed to ${operation}:`, error);
+            throw new Error(`Failed to ${operation}: ${(error as Error).message}`);
         }
     }
 

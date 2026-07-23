@@ -3,6 +3,7 @@
 'use strict';
 var admin_pb = require('./admin_pb.js');
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+var eventstore_pb = require('./eventstore_pb.js');
 
 function serialize_orisun_ChangePasswordRequest(arg) {
   if (!(arg instanceof admin_pb.ChangePasswordRequest)) {
@@ -24,6 +25,28 @@ function serialize_orisun_ChangePasswordResponse(arg) {
 
 function deserialize_orisun_ChangePasswordResponse(buffer_arg) {
   return admin_pb.ChangePasswordResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_CreateBoundaryRequest(arg) {
+  if (!(arg instanceof admin_pb.CreateBoundaryRequest)) {
+    throw new Error('Expected argument of type orisun.CreateBoundaryRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_CreateBoundaryRequest(buffer_arg) {
+  return admin_pb.CreateBoundaryRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_CreateBoundaryResponse(arg) {
+  if (!(arg instanceof admin_pb.CreateBoundaryResponse)) {
+    throw new Error('Expected argument of type orisun.CreateBoundaryResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_CreateBoundaryResponse(buffer_arg) {
+  return admin_pb.CreateBoundaryResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_orisun_CreateUserRequest(arg) {
@@ -70,6 +93,28 @@ function deserialize_orisun_DeleteUserResponse(buffer_arg) {
   return admin_pb.DeleteUserResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_orisun_GetBoundaryRequest(arg) {
+  if (!(arg instanceof admin_pb.GetBoundaryRequest)) {
+    throw new Error('Expected argument of type orisun.GetBoundaryRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_GetBoundaryRequest(buffer_arg) {
+  return admin_pb.GetBoundaryRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_GetBoundaryResponse(arg) {
+  if (!(arg instanceof admin_pb.GetBoundaryResponse)) {
+    throw new Error('Expected argument of type orisun.GetBoundaryResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_GetBoundaryResponse(buffer_arg) {
+  return admin_pb.GetBoundaryResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_orisun_GetEventCountRequest(arg) {
   if (!(arg instanceof admin_pb.GetEventCountRequest)) {
     throw new Error('Expected argument of type orisun.GetEventCountRequest');
@@ -112,6 +157,50 @@ function serialize_orisun_GetUserCountResponse(arg) {
 
 function deserialize_orisun_GetUserCountResponse(buffer_arg) {
   return admin_pb.GetUserCountResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_ImportBoundaryRequest(arg) {
+  if (!(arg instanceof admin_pb.ImportBoundaryRequest)) {
+    throw new Error('Expected argument of type orisun.ImportBoundaryRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_ImportBoundaryRequest(buffer_arg) {
+  return admin_pb.ImportBoundaryRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_ImportBoundaryResponse(arg) {
+  if (!(arg instanceof admin_pb.ImportBoundaryResponse)) {
+    throw new Error('Expected argument of type orisun.ImportBoundaryResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_ImportBoundaryResponse(buffer_arg) {
+  return admin_pb.ImportBoundaryResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_ListBoundariesRequest(arg) {
+  if (!(arg instanceof admin_pb.ListBoundariesRequest)) {
+    throw new Error('Expected argument of type orisun.ListBoundariesRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_ListBoundariesRequest(buffer_arg) {
+  return admin_pb.ListBoundariesRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_orisun_ListBoundariesResponse(arg) {
+  if (!(arg instanceof admin_pb.ListBoundariesResponse)) {
+    throw new Error('Expected argument of type orisun.ListBoundariesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_orisun_ListBoundariesResponse(buffer_arg) {
+  return admin_pb.ListBoundariesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_orisun_ListUsersRequest(arg) {
@@ -161,6 +250,51 @@ function deserialize_orisun_ValidateCredentialsResponse(buffer_arg) {
 
 // Admin service provides user management and administrative operations
 var AdminService = exports['orisun.Admin'] = {
+  // Boundary Management
+createBoundary: {
+    path: '/orisun.Admin/CreateBoundary',
+    requestStream: false,
+    responseStream: false,
+    requestType: admin_pb.CreateBoundaryRequest,
+    responseType: admin_pb.CreateBoundaryResponse,
+    requestSerialize: serialize_orisun_CreateBoundaryRequest,
+    requestDeserialize: deserialize_orisun_CreateBoundaryRequest,
+    responseSerialize: serialize_orisun_CreateBoundaryResponse,
+    responseDeserialize: deserialize_orisun_CreateBoundaryResponse,
+  },
+  importBoundary: {
+    path: '/orisun.Admin/ImportBoundary',
+    requestStream: false,
+    responseStream: false,
+    requestType: admin_pb.ImportBoundaryRequest,
+    responseType: admin_pb.ImportBoundaryResponse,
+    requestSerialize: serialize_orisun_ImportBoundaryRequest,
+    requestDeserialize: deserialize_orisun_ImportBoundaryRequest,
+    responseSerialize: serialize_orisun_ImportBoundaryResponse,
+    responseDeserialize: deserialize_orisun_ImportBoundaryResponse,
+  },
+  listBoundaries: {
+    path: '/orisun.Admin/ListBoundaries',
+    requestStream: false,
+    responseStream: false,
+    requestType: admin_pb.ListBoundariesRequest,
+    responseType: admin_pb.ListBoundariesResponse,
+    requestSerialize: serialize_orisun_ListBoundariesRequest,
+    requestDeserialize: deserialize_orisun_ListBoundariesRequest,
+    responseSerialize: serialize_orisun_ListBoundariesResponse,
+    responseDeserialize: deserialize_orisun_ListBoundariesResponse,
+  },
+  getBoundary: {
+    path: '/orisun.Admin/GetBoundary',
+    requestStream: false,
+    responseStream: false,
+    requestType: admin_pb.GetBoundaryRequest,
+    responseType: admin_pb.GetBoundaryResponse,
+    requestSerialize: serialize_orisun_GetBoundaryRequest,
+    requestDeserialize: deserialize_orisun_GetBoundaryRequest,
+    responseSerialize: serialize_orisun_GetBoundaryResponse,
+    responseDeserialize: deserialize_orisun_GetBoundaryResponse,
+  },
   // User Management
 createUser: {
     path: '/orisun.Admin/CreateUser',

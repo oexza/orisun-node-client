@@ -7,8 +7,13 @@
 import * as grpc from "@grpc/grpc-js";
 import * as admin_pb from "./admin_pb";
 import * as google_protobuf_timestamp_pb from "google-protobuf/google/protobuf/timestamp_pb";
+import * as eventstore_pb from "./eventstore_pb";
 
 interface IAdminService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
+    createBoundary: IAdminService_ICreateBoundary;
+    importBoundary: IAdminService_IImportBoundary;
+    listBoundaries: IAdminService_IListBoundaries;
+    getBoundary: IAdminService_IGetBoundary;
     createUser: IAdminService_ICreateUser;
     deleteUser: IAdminService_IDeleteUser;
     changePassword: IAdminService_IChangePassword;
@@ -18,6 +23,42 @@ interface IAdminService extends grpc.ServiceDefinition<grpc.UntypedServiceImplem
     getEventCount: IAdminService_IGetEventCount;
 }
 
+interface IAdminService_ICreateBoundary extends grpc.MethodDefinition<admin_pb.CreateBoundaryRequest, admin_pb.CreateBoundaryResponse> {
+    path: "/orisun.Admin/CreateBoundary";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<admin_pb.CreateBoundaryRequest>;
+    requestDeserialize: grpc.deserialize<admin_pb.CreateBoundaryRequest>;
+    responseSerialize: grpc.serialize<admin_pb.CreateBoundaryResponse>;
+    responseDeserialize: grpc.deserialize<admin_pb.CreateBoundaryResponse>;
+}
+interface IAdminService_IImportBoundary extends grpc.MethodDefinition<admin_pb.ImportBoundaryRequest, admin_pb.ImportBoundaryResponse> {
+    path: "/orisun.Admin/ImportBoundary";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<admin_pb.ImportBoundaryRequest>;
+    requestDeserialize: grpc.deserialize<admin_pb.ImportBoundaryRequest>;
+    responseSerialize: grpc.serialize<admin_pb.ImportBoundaryResponse>;
+    responseDeserialize: grpc.deserialize<admin_pb.ImportBoundaryResponse>;
+}
+interface IAdminService_IListBoundaries extends grpc.MethodDefinition<admin_pb.ListBoundariesRequest, admin_pb.ListBoundariesResponse> {
+    path: "/orisun.Admin/ListBoundaries";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<admin_pb.ListBoundariesRequest>;
+    requestDeserialize: grpc.deserialize<admin_pb.ListBoundariesRequest>;
+    responseSerialize: grpc.serialize<admin_pb.ListBoundariesResponse>;
+    responseDeserialize: grpc.deserialize<admin_pb.ListBoundariesResponse>;
+}
+interface IAdminService_IGetBoundary extends grpc.MethodDefinition<admin_pb.GetBoundaryRequest, admin_pb.GetBoundaryResponse> {
+    path: "/orisun.Admin/GetBoundary";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<admin_pb.GetBoundaryRequest>;
+    requestDeserialize: grpc.deserialize<admin_pb.GetBoundaryRequest>;
+    responseSerialize: grpc.serialize<admin_pb.GetBoundaryResponse>;
+    responseDeserialize: grpc.deserialize<admin_pb.GetBoundaryResponse>;
+}
 interface IAdminService_ICreateUser extends grpc.MethodDefinition<admin_pb.CreateUserRequest, admin_pb.CreateUserResponse> {
     path: "/orisun.Admin/CreateUser";
     requestStream: false;
@@ -85,6 +126,10 @@ interface IAdminService_IGetEventCount extends grpc.MethodDefinition<admin_pb.Ge
 export const AdminService: IAdminService;
 
 export interface IAdminServer extends grpc.UntypedServiceImplementation {
+    createBoundary: grpc.handleUnaryCall<admin_pb.CreateBoundaryRequest, admin_pb.CreateBoundaryResponse>;
+    importBoundary: grpc.handleUnaryCall<admin_pb.ImportBoundaryRequest, admin_pb.ImportBoundaryResponse>;
+    listBoundaries: grpc.handleUnaryCall<admin_pb.ListBoundariesRequest, admin_pb.ListBoundariesResponse>;
+    getBoundary: grpc.handleUnaryCall<admin_pb.GetBoundaryRequest, admin_pb.GetBoundaryResponse>;
     createUser: grpc.handleUnaryCall<admin_pb.CreateUserRequest, admin_pb.CreateUserResponse>;
     deleteUser: grpc.handleUnaryCall<admin_pb.DeleteUserRequest, admin_pb.DeleteUserResponse>;
     changePassword: grpc.handleUnaryCall<admin_pb.ChangePasswordRequest, admin_pb.ChangePasswordResponse>;
@@ -95,6 +140,18 @@ export interface IAdminServer extends grpc.UntypedServiceImplementation {
 }
 
 export interface IAdminClient {
+    createBoundary(request: admin_pb.CreateBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    importBoundary(request: admin_pb.ImportBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    listBoundaries(request: admin_pb.ListBoundariesRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    getBoundary(request: admin_pb.GetBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
+    getBoundary(request: admin_pb.GetBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
+    getBoundary(request: admin_pb.GetBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
     createUser(request: admin_pb.CreateUserRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;
     createUser(request: admin_pb.CreateUserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;
     createUser(request: admin_pb.CreateUserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;
@@ -120,6 +177,18 @@ export interface IAdminClient {
 
 export class AdminClient extends grpc.Client implements IAdminClient {
     constructor(address: string, credentials: grpc.ChannelCredentials, options?: Partial<grpc.ClientOptions>);
+    public createBoundary(request: admin_pb.CreateBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public importBoundary(request: admin_pb.ImportBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public listBoundaries(request: admin_pb.ListBoundariesRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    public listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    public listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
+    public getBoundary(request: admin_pb.GetBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public getBoundary(request: admin_pb.GetBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
+    public getBoundary(request: admin_pb.GetBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.GetBoundaryResponse) => void): grpc.ClientUnaryCall;
     public createUser(request: admin_pb.CreateUserRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;
     public createUser(request: admin_pb.CreateUserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;
     public createUser(request: admin_pb.CreateUserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateUserResponse) => void): grpc.ClientUnaryCall;

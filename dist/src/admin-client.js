@@ -33,10 +33,21 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminClient = void 0;
+exports.AdminClient = exports.BoundaryOrigin = exports.BoundaryStatus = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
 const path = __importStar(require("path"));
+var BoundaryStatus;
+(function (BoundaryStatus) {
+    BoundaryStatus["PROVISIONING"] = "PROVISIONING";
+    BoundaryStatus["ACTIVE"] = "ACTIVE";
+    BoundaryStatus["FAILED"] = "FAILED";
+})(BoundaryStatus || (exports.BoundaryStatus = BoundaryStatus = {}));
+var BoundaryOrigin;
+(function (BoundaryOrigin) {
+    BoundaryOrigin["CREATED"] = "CREATED";
+    BoundaryOrigin["IMPORTED"] = "IMPORTED";
+})(BoundaryOrigin || (exports.BoundaryOrigin = BoundaryOrigin = {}));
 /**
  * Validates admin client options and throws errors for invalid configurations
  */
@@ -92,6 +103,30 @@ function parseAdminUser(user) {
         roles: user.roles || [],
         createdAt: parseTimestamp(user.created_at),
         updatedAt: parseTimestamp(user.updated_at)
+    };
+}
+function parseBoundaryPosition(position) {
+    if (!position) {
+        return undefined;
+    }
+    return {
+        commitPosition: Number(position.commit_position),
+        preparePosition: Number(position.prepare_position)
+    };
+}
+function parseBoundaryInfo(boundary) {
+    return {
+        name: boundary.name,
+        description: boundary.description,
+        placement: {
+            backend: boundary.placement?.backend || '',
+            namespace: boundary.placement?.namespace || ''
+        },
+        status: String(boundary.status).replace('BOUNDARY_LIFECYCLE_STATUS_', ''),
+        origin: String(boundary.origin).replace('BOUNDARY_REGISTRATION_ORIGIN_', ''),
+        lastError: boundary.last_error || '',
+        definitionPosition: parseBoundaryPosition(boundary.definition_position),
+        statusPosition: parseBoundaryPosition(boundary.status_position)
     };
 }
 /**
@@ -498,6 +533,102 @@ class AdminClient {
         catch (error) {
             this.logger.error(`Failed to get event count:`, error);
             throw new Error(`Failed to get event count: ${error.message}`);
+        }
+    }
+    /** Emit a definition event for a new boundary. */
+    async createBoundary(request) {
+        return this.writeBoundaryDefinition('createBoundary', 'create boundary', request);
+    }
+    /** Emit an import event for an existing physical boundary. */
+    async importBoundary(request) {
+        return this.writeBoundaryDefinition('importBoundary', 'import boundary', request);
+    }
+    /** List the current event-rebuilt boundary catalog. */
+    async listBoundaries() {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        try {
+            const metadata = this.createAuthMetadata('list boundaries');
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client.listBoundaries({}, metadata, (error, value) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, 'list boundaries response');
+            });
+            return { boundaries: (response.boundaries || []).map(parseBoundaryInfo) };
+        }
+        catch (error) {
+            this.logger.error('Failed to list boundaries:', error);
+            throw new Error(`Failed to list boundaries: ${error.message}`);
+        }
+    }
+    /** Get one boundary from the event-rebuilt catalog. */
+    async getBoundary(name) {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!name) {
+            throw new Error('Boundary name is required');
+        }
+        try {
+            const metadata = this.createAuthMetadata('get boundary');
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client.getBoundary({ name }, metadata, (error, value) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, 'get boundary response');
+            });
+            return { boundary: parseBoundaryInfo(response.boundary) };
+        }
+        catch (error) {
+            this.logger.error(`Failed to get boundary '${name}':`, error);
+            throw new Error(`Failed to get boundary: ${error.message}`);
+        }
+    }
+    async writeBoundaryDefinition(method, operation, request) {
+        if (this.disposed) {
+            throw new Error('Client has been disposed');
+        }
+        if (!request?.name) {
+            throw new Error('Boundary name is required');
+        }
+        if (!request.placement?.backend || !request.placement?.namespace) {
+            throw new Error('Boundary placement backend and namespace are required');
+        }
+        const grpcRequest = {
+            name: request.name,
+            description: request.description || '',
+            placement: {
+                backend: request.placement.backend,
+                namespace: request.placement.namespace
+            }
+        };
+        try {
+            const metadata = this.createAuthMetadata(operation);
+            const response = await new Promise((resolve, reject) => {
+                const call = this.client[method](grpcRequest, metadata, (error, value) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(value);
+                });
+                this.setupTokenCaching(call, `${operation} response`);
+            });
+            return { boundary: parseBoundaryInfo(response.boundary) };
+        }
+        catch (error) {
+            this.logger.error(`Failed to ${operation}:`, error);
+            throw new Error(`Failed to ${operation}: ${error.message}`);
         }
     }
     /**

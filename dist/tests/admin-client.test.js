@@ -43,6 +43,10 @@ const mockListUsers = jest.fn();
 const mockValidateCredentials = jest.fn();
 const mockGetUserCount = jest.fn();
 const mockGetEventCount = jest.fn();
+const mockCreateBoundary = jest.fn();
+const mockImportBoundary = jest.fn();
+const mockListBoundaries = jest.fn();
+const mockGetBoundary = jest.fn();
 const mockAdminClient = {
     createUser: mockCreateUser,
     deleteUser: mockDeleteUser,
@@ -51,6 +55,10 @@ const mockAdminClient = {
     validateCredentials: mockValidateCredentials,
     getUserCount: mockGetUserCount,
     getEventCount: mockGetEventCount,
+    createBoundary: mockCreateBoundary,
+    importBoundary: mockImportBoundary,
+    listBoundaries: mockListBoundaries,
+    getBoundary: mockGetBoundary,
 };
 const mockClient = jest.fn().mockImplementation(() => mockAdminClient);
 jest.mock('@grpc/grpc-js', () => ({
@@ -195,6 +203,35 @@ beforeEach(() => {
         callback(null, { count: '100' });
         return mockCall;
     });
+    const boundaryResponse = (origin) => ({
+        boundary: {
+            name: 'sales',
+            description: 'Sales domain',
+            placement: { backend: 'postgres', namespace: 'tenant_data' },
+            status: 'BOUNDARY_LIFECYCLE_STATUS_PROVISIONING',
+            origin,
+            last_error: '',
+            definition_position: { commit_position: '12', prepare_position: '13' },
+            status_position: { commit_position: '12', prepare_position: '13' }
+        }
+    });
+    const boundaryCall = () => ({ on: jest.fn() });
+    mockCreateBoundary.mockImplementation((request, metadata, callback) => {
+        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED'));
+        return boundaryCall();
+    });
+    mockImportBoundary.mockImplementation((request, metadata, callback) => {
+        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_IMPORTED'));
+        return boundaryCall();
+    });
+    mockListBoundaries.mockImplementation((request, metadata, callback) => {
+        callback(null, { boundaries: [boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED').boundary] });
+        return boundaryCall();
+    });
+    mockGetBoundary.mockImplementation((request, metadata, callback) => {
+        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED'));
+        return boundaryCall();
+    });
 });
 describe('AdminClient', () => {
     let client;
@@ -204,6 +241,44 @@ describe('AdminClient', () => {
             port: 5005,
             username: 'admin',
             password: 'changeit'
+        });
+    });
+    describe('boundary management', () => {
+        it('creates a boundary through the admin RPC', async () => {
+            const response = await client.createBoundary({
+                name: 'sales',
+                description: 'Sales domain',
+                placement: { backend: 'postgres', namespace: 'tenant_data' }
+            });
+            expect(mockCreateBoundary).toHaveBeenCalled();
+            expect(response.boundary.status).toBe('PROVISIONING');
+            expect(response.boundary.origin).toBe('CREATED');
+            expect(response.boundary.definitionPosition).toEqual({ commitPosition: 12, preparePosition: 13 });
+        });
+        it('imports an existing boundary through the admin RPC', async () => {
+            const response = await client.importBoundary({
+                name: 'sales',
+                placement: { backend: 'postgres', namespace: 'tenant_data' }
+            });
+            expect(mockImportBoundary).toHaveBeenCalled();
+            expect(response.boundary.origin).toBe('IMPORTED');
+        });
+        it('validates boundary placement locally', async () => {
+            await expect(client.createBoundary({ name: 'sales', placement: { backend: '', namespace: '' } }))
+                .rejects.toThrow('Boundary placement backend and namespace are required');
+        });
+        it('lists boundaries from the catalog', async () => {
+            const response = await client.listBoundaries();
+            expect(response.boundaries).toHaveLength(1);
+            expect(response.boundaries[0].name).toBe('sales');
+        });
+        it('gets a boundary from the catalog', async () => {
+            const response = await client.getBoundary('sales');
+            expect(mockGetBoundary.mock.calls[0][0]).toEqual({ name: 'sales' });
+            expect(response.boundary.status).toBe('PROVISIONING');
+        });
+        it('requires a boundary name for get', async () => {
+            await expect(client.getBoundary('')).rejects.toThrow('Boundary name is required');
         });
     });
     afterEach(() => {

@@ -41,6 +41,17 @@ export {
   GetUserCountResponse,
   GetEventCountRequest,
   GetEventCountResponse,
+  BoundaryPlacement,
+  BoundaryStatus,
+  BoundaryOrigin,
+  BoundaryPosition,
+  BoundaryInfo,
+  CreateBoundaryRequest,
+  CreateBoundaryResponse,
+  ImportBoundaryRequest,
+  ImportBoundaryResponse,
+  ListBoundariesResponse,
+  GetBoundaryResponse,
   AdminClientOptions
 } from './admin-client';
 

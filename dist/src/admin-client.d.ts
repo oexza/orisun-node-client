@@ -111,6 +111,55 @@ export interface GetEventCountRequest {
 export interface GetEventCountResponse {
     count: number;
 }
+export interface BoundaryPlacement {
+    backend: string;
+    namespace: string;
+}
+export declare enum BoundaryStatus {
+    PROVISIONING = "PROVISIONING",
+    ACTIVE = "ACTIVE",
+    FAILED = "FAILED"
+}
+export declare enum BoundaryOrigin {
+    CREATED = "CREATED",
+    IMPORTED = "IMPORTED"
+}
+export interface BoundaryPosition {
+    commitPosition: number;
+    preparePosition: number;
+}
+export interface BoundaryInfo {
+    name: string;
+    description: string;
+    placement: BoundaryPlacement;
+    status: BoundaryStatus;
+    origin: BoundaryOrigin;
+    lastError: string;
+    definitionPosition?: BoundaryPosition;
+    statusPosition?: BoundaryPosition;
+}
+export interface CreateBoundaryRequest {
+    name: string;
+    description?: string;
+    placement: BoundaryPlacement;
+}
+export interface CreateBoundaryResponse {
+    boundary: BoundaryInfo;
+}
+export interface ImportBoundaryRequest {
+    name: string;
+    description?: string;
+    placement: BoundaryPlacement;
+}
+export interface ImportBoundaryResponse {
+    boundary: BoundaryInfo;
+}
+export interface ListBoundariesResponse {
+    boundaries: BoundaryInfo[];
+}
+export interface GetBoundaryResponse {
+    boundary: BoundaryInfo;
+}
 /**
  * AdminClient provides user management and administrative operations
  */
@@ -161,6 +210,15 @@ export declare class AdminClient {
      * Get event count for a boundary
      */
     getEventCount(request: GetEventCountRequest): Promise<GetEventCountResponse>;
+    /** Emit a definition event for a new boundary. */
+    createBoundary(request: CreateBoundaryRequest): Promise<CreateBoundaryResponse>;
+    /** Emit an import event for an existing physical boundary. */
+    importBoundary(request: ImportBoundaryRequest): Promise<ImportBoundaryResponse>;
+    /** List the current event-rebuilt boundary catalog. */
+    listBoundaries(): Promise<ListBoundariesResponse>;
+    /** Get one boundary from the event-rebuilt catalog. */
+    getBoundary(name: string): Promise<GetBoundaryResponse>;
+    private writeBoundaryDefinition;
     /**
      * Close the client connection and clean up resources
      */
