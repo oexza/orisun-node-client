@@ -43,13 +43,10 @@ export {
   GetEventCountResponse,
   BoundaryPlacement,
   BoundaryStatus,
-  BoundaryOrigin,
   BoundaryPosition,
   BoundaryInfo,
   CreateBoundaryRequest,
   CreateBoundaryResponse,
-  ImportBoundaryRequest,
-  ImportBoundaryResponse,
   ListBoundariesResponse,
   GetBoundaryResponse,
   AdminClientOptions

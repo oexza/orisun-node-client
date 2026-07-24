@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminClient = exports.BoundaryOrigin = exports.BoundaryStatus = void 0;
+exports.AdminClient = exports.BoundaryStatus = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
 const path = __importStar(require("path"));
@@ -43,11 +43,6 @@ var BoundaryStatus;
     BoundaryStatus["ACTIVE"] = "ACTIVE";
     BoundaryStatus["FAILED"] = "FAILED";
 })(BoundaryStatus || (exports.BoundaryStatus = BoundaryStatus = {}));
-var BoundaryOrigin;
-(function (BoundaryOrigin) {
-    BoundaryOrigin["CREATED"] = "CREATED";
-    BoundaryOrigin["IMPORTED"] = "IMPORTED";
-})(BoundaryOrigin || (exports.BoundaryOrigin = BoundaryOrigin = {}));
 /**
  * Validates admin client options and throws errors for invalid configurations
  */
@@ -123,7 +118,7 @@ function parseBoundaryInfo(boundary) {
             namespace: boundary.placement?.namespace || ''
         },
         status: String(boundary.status).replace('BOUNDARY_LIFECYCLE_STATUS_', ''),
-        origin: String(boundary.origin).replace('BOUNDARY_REGISTRATION_ORIGIN_', ''),
+        existedBeforeCatalog: Boolean(boundary.existed_before_catalog),
         lastError: boundary.last_error || '',
         definitionPosition: parseBoundaryPosition(boundary.definition_position),
         statusPosition: parseBoundaryPosition(boundary.status_position)
@@ -535,13 +530,9 @@ class AdminClient {
             throw new Error(`Failed to get event count: ${error.message}`);
         }
     }
-    /** Emit a definition event for a new boundary. */
+    /** Record a catalog definition and idempotently provision its physical storage. */
     async createBoundary(request) {
-        return this.writeBoundaryDefinition('createBoundary', 'create boundary', request);
-    }
-    /** Emit an import event for an existing physical boundary. */
-    async importBoundary(request) {
-        return this.writeBoundaryDefinition('importBoundary', 'import boundary', request);
+        return this.writeBoundaryDefinition(request);
     }
     /** List the current event-rebuilt boundary catalog. */
     async listBoundaries() {
@@ -594,7 +585,8 @@ class AdminClient {
             throw new Error(`Failed to get boundary: ${error.message}`);
         }
     }
-    async writeBoundaryDefinition(method, operation, request) {
+    async writeBoundaryDefinition(request) {
+        const operation = 'create boundary';
         if (this.disposed) {
             throw new Error('Client has been disposed');
         }
@@ -610,12 +602,13 @@ class AdminClient {
             placement: {
                 backend: request.placement.backend,
                 namespace: request.placement.namespace
-            }
+            },
+            existed_before_catalog: request.existedBeforeCatalog || false
         };
         try {
             const metadata = this.createAuthMetadata(operation);
             const response = await new Promise((resolve, reject) => {
-                const call = this.client[method](grpcRequest, metadata, (error, value) => {
+                const call = this.client.createBoundary(grpcRequest, metadata, (error, value) => {
                     if (error) {
                         reject(error);
                         return;

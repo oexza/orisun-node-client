@@ -159,28 +159,6 @@ function deserialize_orisun_GetUserCountResponse(buffer_arg) {
   return admin_pb.GetUserCountResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_orisun_ImportBoundaryRequest(arg) {
-  if (!(arg instanceof admin_pb.ImportBoundaryRequest)) {
-    throw new Error('Expected argument of type orisun.ImportBoundaryRequest');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_orisun_ImportBoundaryRequest(buffer_arg) {
-  return admin_pb.ImportBoundaryRequest.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_orisun_ImportBoundaryResponse(arg) {
-  if (!(arg instanceof admin_pb.ImportBoundaryResponse)) {
-    throw new Error('Expected argument of type orisun.ImportBoundaryResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_orisun_ImportBoundaryResponse(buffer_arg) {
-  return admin_pb.ImportBoundaryResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_orisun_ListBoundariesRequest(arg) {
   if (!(arg instanceof admin_pb.ListBoundariesRequest)) {
     throw new Error('Expected argument of type orisun.ListBoundariesRequest');
@@ -261,17 +239,6 @@ createBoundary: {
     requestDeserialize: deserialize_orisun_CreateBoundaryRequest,
     responseSerialize: serialize_orisun_CreateBoundaryResponse,
     responseDeserialize: deserialize_orisun_CreateBoundaryResponse,
-  },
-  importBoundary: {
-    path: '/orisun.Admin/ImportBoundary',
-    requestStream: false,
-    responseStream: false,
-    requestType: admin_pb.ImportBoundaryRequest,
-    responseType: admin_pb.ImportBoundaryResponse,
-    requestSerialize: serialize_orisun_ImportBoundaryRequest,
-    requestDeserialize: deserialize_orisun_ImportBoundaryRequest,
-    responseSerialize: serialize_orisun_ImportBoundaryResponse,
-    responseDeserialize: deserialize_orisun_ImportBoundaryResponse,
   },
   listBoundaries: {
     path: '/orisun.Admin/ListBoundaries',

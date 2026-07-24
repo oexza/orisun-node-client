@@ -180,9 +180,10 @@ const {boundary: definition} = await admin.createBoundary({
   placement: { backend: 'postgres', namespace: 'public' },
 });
 
-const {boundary: imported} = await admin.importBoundary({
+const {boundary: existing} = await admin.createBoundary({
   name: 'legacy_orders',
   placement: { backend: 'postgres', namespace: 'legacy' },
+  existedBeforeCatalog: true,
 });
 
 // Definition commands return PROVISIONING. Wait before using EventStore APIs.
@@ -198,10 +199,10 @@ if (orders.status !== BoundaryStatus.ACTIVE) {
 const {boundaries} = await admin.listBoundaries();
 ```
 
-`createBoundary` creates and migrates new physical storage. `importBoundary`
-registers storage that already exists and applies migrations idempotently.
-Both operations append durable definition events; a duplicate name returns
-`ALREADY_EXISTS`. Placement is backend-specific:
+`createBoundary` creates and migrates physical storage idempotently. Set
+`existedBeforeCatalog: true` to record that the physical storage predates its
+catalog entry. The operation appends a durable definition event; a duplicate
+name returns `ALREADY_EXISTS`. Placement is backend-specific:
 
 - PostgreSQL/YugabyteDB: `{ backend: 'postgres', namespace: '<schema>' }`
 - SQLite: `{ backend: 'sqlite', namespace: '<boundary-name>' }`

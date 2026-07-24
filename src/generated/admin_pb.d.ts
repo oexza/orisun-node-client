@@ -391,8 +391,8 @@ export class BoundaryInfo extends jspb.Message {
     setPlacement(value?: BoundaryPlacementInput): BoundaryInfo;
     getStatus(): BoundaryLifecycleStatus;
     setStatus(value: BoundaryLifecycleStatus): BoundaryInfo;
-    getOrigin(): BoundaryRegistrationOrigin;
-    setOrigin(value: BoundaryRegistrationOrigin): BoundaryInfo;
+    getExistedBeforeCatalog(): boolean;
+    setExistedBeforeCatalog(value: boolean): BoundaryInfo;
     getLastError(): string;
     setLastError(value: string): BoundaryInfo;
 
@@ -422,7 +422,7 @@ export namespace BoundaryInfo {
         description: string,
         placement?: BoundaryPlacementInput.AsObject,
         status: BoundaryLifecycleStatus,
-        origin: BoundaryRegistrationOrigin,
+        existedBeforeCatalog: boolean,
         lastError: string,
         definitionPosition?: eventstore_pb.Position.AsObject,
         statusPosition?: eventstore_pb.Position.AsObject,
@@ -439,6 +439,8 @@ export class CreateBoundaryRequest extends jspb.Message {
     clearPlacement(): void;
     getPlacement(): BoundaryPlacementInput | undefined;
     setPlacement(value?: BoundaryPlacementInput): CreateBoundaryRequest;
+    getExistedBeforeCatalog(): boolean;
+    setExistedBeforeCatalog(value: boolean): CreateBoundaryRequest;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): CreateBoundaryRequest.AsObject;
@@ -455,6 +457,7 @@ export namespace CreateBoundaryRequest {
         name: string,
         description: string,
         placement?: BoundaryPlacementInput.AsObject,
+        existedBeforeCatalog: boolean,
     }
 }
 
@@ -476,58 +479,6 @@ export class CreateBoundaryResponse extends jspb.Message {
 }
 
 export namespace CreateBoundaryResponse {
-    export type AsObject = {
-        boundary?: BoundaryInfo.AsObject,
-    }
-}
-
-export class ImportBoundaryRequest extends jspb.Message {
-    getName(): string;
-    setName(value: string): ImportBoundaryRequest;
-    getDescription(): string;
-    setDescription(value: string): ImportBoundaryRequest;
-
-    hasPlacement(): boolean;
-    clearPlacement(): void;
-    getPlacement(): BoundaryPlacementInput | undefined;
-    setPlacement(value?: BoundaryPlacementInput): ImportBoundaryRequest;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): ImportBoundaryRequest.AsObject;
-    static toObject(includeInstance: boolean, msg: ImportBoundaryRequest): ImportBoundaryRequest.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: ImportBoundaryRequest, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): ImportBoundaryRequest;
-    static deserializeBinaryFromReader(message: ImportBoundaryRequest, reader: jspb.BinaryReader): ImportBoundaryRequest;
-}
-
-export namespace ImportBoundaryRequest {
-    export type AsObject = {
-        name: string,
-        description: string,
-        placement?: BoundaryPlacementInput.AsObject,
-    }
-}
-
-export class ImportBoundaryResponse extends jspb.Message {
-
-    hasBoundary(): boolean;
-    clearBoundary(): void;
-    getBoundary(): BoundaryInfo | undefined;
-    setBoundary(value?: BoundaryInfo): ImportBoundaryResponse;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): ImportBoundaryResponse.AsObject;
-    static toObject(includeInstance: boolean, msg: ImportBoundaryResponse): ImportBoundaryResponse.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: ImportBoundaryResponse, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): ImportBoundaryResponse;
-    static deserializeBinaryFromReader(message: ImportBoundaryResponse, reader: jspb.BinaryReader): ImportBoundaryResponse;
-}
-
-export namespace ImportBoundaryResponse {
     export type AsObject = {
         boundary?: BoundaryInfo.AsObject,
     }
@@ -620,10 +571,4 @@ export enum BoundaryLifecycleStatus {
     BOUNDARY_LIFECYCLE_STATUS_PROVISIONING = 1,
     BOUNDARY_LIFECYCLE_STATUS_ACTIVE = 2,
     BOUNDARY_LIFECYCLE_STATUS_FAILED = 3,
-}
-
-export enum BoundaryRegistrationOrigin {
-    BOUNDARY_REGISTRATION_ORIGIN_UNSPECIFIED = 0,
-    BOUNDARY_REGISTRATION_ORIGIN_CREATED = 1,
-    BOUNDARY_REGISTRATION_ORIGIN_IMPORTED = 2,
 }

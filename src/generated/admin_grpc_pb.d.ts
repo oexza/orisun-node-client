@@ -11,7 +11,6 @@ import * as eventstore_pb from "./eventstore_pb";
 
 interface IAdminService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
     createBoundary: IAdminService_ICreateBoundary;
-    importBoundary: IAdminService_IImportBoundary;
     listBoundaries: IAdminService_IListBoundaries;
     getBoundary: IAdminService_IGetBoundary;
     createUser: IAdminService_ICreateUser;
@@ -31,15 +30,6 @@ interface IAdminService_ICreateBoundary extends grpc.MethodDefinition<admin_pb.C
     requestDeserialize: grpc.deserialize<admin_pb.CreateBoundaryRequest>;
     responseSerialize: grpc.serialize<admin_pb.CreateBoundaryResponse>;
     responseDeserialize: grpc.deserialize<admin_pb.CreateBoundaryResponse>;
-}
-interface IAdminService_IImportBoundary extends grpc.MethodDefinition<admin_pb.ImportBoundaryRequest, admin_pb.ImportBoundaryResponse> {
-    path: "/orisun.Admin/ImportBoundary";
-    requestStream: false;
-    responseStream: false;
-    requestSerialize: grpc.serialize<admin_pb.ImportBoundaryRequest>;
-    requestDeserialize: grpc.deserialize<admin_pb.ImportBoundaryRequest>;
-    responseSerialize: grpc.serialize<admin_pb.ImportBoundaryResponse>;
-    responseDeserialize: grpc.deserialize<admin_pb.ImportBoundaryResponse>;
 }
 interface IAdminService_IListBoundaries extends grpc.MethodDefinition<admin_pb.ListBoundariesRequest, admin_pb.ListBoundariesResponse> {
     path: "/orisun.Admin/ListBoundaries";
@@ -127,7 +117,6 @@ export const AdminService: IAdminService;
 
 export interface IAdminServer extends grpc.UntypedServiceImplementation {
     createBoundary: grpc.handleUnaryCall<admin_pb.CreateBoundaryRequest, admin_pb.CreateBoundaryResponse>;
-    importBoundary: grpc.handleUnaryCall<admin_pb.ImportBoundaryRequest, admin_pb.ImportBoundaryResponse>;
     listBoundaries: grpc.handleUnaryCall<admin_pb.ListBoundariesRequest, admin_pb.ListBoundariesResponse>;
     getBoundary: grpc.handleUnaryCall<admin_pb.GetBoundaryRequest, admin_pb.GetBoundaryResponse>;
     createUser: grpc.handleUnaryCall<admin_pb.CreateUserRequest, admin_pb.CreateUserResponse>;
@@ -143,9 +132,6 @@ export interface IAdminClient {
     createBoundary(request: admin_pb.CreateBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
     createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
     createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
-    importBoundary(request: admin_pb.ImportBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
-    importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
-    importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
     listBoundaries(request: admin_pb.ListBoundariesRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
     listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
     listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
@@ -180,9 +166,6 @@ export class AdminClient extends grpc.Client implements IAdminClient {
     public createBoundary(request: admin_pb.CreateBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
     public createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
     public createBoundary(request: admin_pb.CreateBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.CreateBoundaryResponse) => void): grpc.ClientUnaryCall;
-    public importBoundary(request: admin_pb.ImportBoundaryRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
-    public importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
-    public importBoundary(request: admin_pb.ImportBoundaryRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ImportBoundaryResponse) => void): grpc.ClientUnaryCall;
     public listBoundaries(request: admin_pb.ListBoundariesRequest, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
     public listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;
     public listBoundaries(request: admin_pb.ListBoundariesRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: admin_pb.ListBoundariesResponse) => void): grpc.ClientUnaryCall;

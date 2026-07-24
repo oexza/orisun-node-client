@@ -44,7 +44,6 @@ const mockValidateCredentials = jest.fn();
 const mockGetUserCount = jest.fn();
 const mockGetEventCount = jest.fn();
 const mockCreateBoundary = jest.fn();
-const mockImportBoundary = jest.fn();
 const mockListBoundaries = jest.fn();
 const mockGetBoundary = jest.fn();
 const mockAdminClient = {
@@ -56,7 +55,6 @@ const mockAdminClient = {
     getUserCount: mockGetUserCount,
     getEventCount: mockGetEventCount,
     createBoundary: mockCreateBoundary,
-    importBoundary: mockImportBoundary,
     listBoundaries: mockListBoundaries,
     getBoundary: mockGetBoundary,
 };
@@ -203,13 +201,13 @@ beforeEach(() => {
         callback(null, { count: '100' });
         return mockCall;
     });
-    const boundaryResponse = (origin) => ({
+    const boundaryResponse = (existedBeforeCatalog) => ({
         boundary: {
             name: 'sales',
             description: 'Sales domain',
             placement: { backend: 'postgres', namespace: 'tenant_data' },
             status: 'BOUNDARY_LIFECYCLE_STATUS_PROVISIONING',
-            origin,
+            existed_before_catalog: existedBeforeCatalog,
             last_error: '',
             definition_position: { commit_position: '12', prepare_position: '13' },
             status_position: { commit_position: '12', prepare_position: '13' }
@@ -217,19 +215,15 @@ beforeEach(() => {
     });
     const boundaryCall = () => ({ on: jest.fn() });
     mockCreateBoundary.mockImplementation((request, metadata, callback) => {
-        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED'));
-        return boundaryCall();
-    });
-    mockImportBoundary.mockImplementation((request, metadata, callback) => {
-        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_IMPORTED'));
+        callback(null, boundaryResponse(request.existed_before_catalog));
         return boundaryCall();
     });
     mockListBoundaries.mockImplementation((request, metadata, callback) => {
-        callback(null, { boundaries: [boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED').boundary] });
+        callback(null, { boundaries: [boundaryResponse(false).boundary] });
         return boundaryCall();
     });
     mockGetBoundary.mockImplementation((request, metadata, callback) => {
-        callback(null, boundaryResponse('BOUNDARY_REGISTRATION_ORIGIN_CREATED'));
+        callback(null, boundaryResponse(false));
         return boundaryCall();
     });
 });
@@ -252,16 +246,18 @@ describe('AdminClient', () => {
             });
             expect(mockCreateBoundary).toHaveBeenCalled();
             expect(response.boundary.status).toBe('PROVISIONING');
-            expect(response.boundary.origin).toBe('CREATED');
+            expect(response.boundary.existedBeforeCatalog).toBe(false);
             expect(response.boundary.definitionPosition).toEqual({ commitPosition: 12, preparePosition: 13 });
         });
-        it('imports an existing boundary through the admin RPC', async () => {
-            const response = await client.importBoundary({
+        it('records when physical storage predates the catalog', async () => {
+            const response = await client.createBoundary({
                 name: 'sales',
-                placement: { backend: 'postgres', namespace: 'tenant_data' }
+                placement: { backend: 'postgres', namespace: 'tenant_data' },
+                existedBeforeCatalog: true
             });
-            expect(mockImportBoundary).toHaveBeenCalled();
-            expect(response.boundary.origin).toBe('IMPORTED');
+            const lastCall = mockCreateBoundary.mock.calls[mockCreateBoundary.mock.calls.length - 1];
+            expect(lastCall[0].existed_before_catalog).toBe(true);
+            expect(response.boundary.existedBeforeCatalog).toBe(true);
         });
         it('validates boundary placement locally', async () => {
             await expect(client.createBoundary({ name: 'sales', placement: { backend: '', namespace: '' } }))

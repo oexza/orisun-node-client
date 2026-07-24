@@ -149,11 +149,6 @@ export enum BoundaryStatus {
     FAILED = 'FAILED'
 }
 
-export enum BoundaryOrigin {
-    CREATED = 'CREATED',
-    IMPORTED = 'IMPORTED'
-}
-
 export interface BoundaryPosition {
     commitPosition: number;
     preparePosition: number;
@@ -164,7 +159,7 @@ export interface BoundaryInfo {
     description: string;
     placement: BoundaryPlacement;
     status: BoundaryStatus;
-    origin: BoundaryOrigin;
+    existedBeforeCatalog: boolean;
     lastError: string;
     definitionPosition?: BoundaryPosition;
     statusPosition?: BoundaryPosition;
@@ -174,19 +169,10 @@ export interface CreateBoundaryRequest {
     name: string;
     description?: string;
     placement: BoundaryPlacement;
+    existedBeforeCatalog?: boolean;
 }
 
 export interface CreateBoundaryResponse {
-    boundary: BoundaryInfo;
-}
-
-export interface ImportBoundaryRequest {
-    name: string;
-    description?: string;
-    placement: BoundaryPlacement;
-}
-
-export interface ImportBoundaryResponse {
     boundary: BoundaryInfo;
 }
 
@@ -285,7 +271,7 @@ function parseBoundaryInfo(boundary: any): BoundaryInfo {
             namespace: boundary.placement?.namespace || ''
         },
         status: String(boundary.status).replace('BOUNDARY_LIFECYCLE_STATUS_', '') as BoundaryStatus,
-        origin: String(boundary.origin).replace('BOUNDARY_REGISTRATION_ORIGIN_', '') as BoundaryOrigin,
+        existedBeforeCatalog: Boolean(boundary.existed_before_catalog),
         lastError: boundary.last_error || '',
         definitionPosition: parseBoundaryPosition(boundary.definition_position),
         statusPosition: parseBoundaryPosition(boundary.status_position)
@@ -799,14 +785,9 @@ export class AdminClient {
         }
     }
 
-    /** Emit a definition event for a new boundary. */
+    /** Record a catalog definition and idempotently provision its physical storage. */
     async createBoundary(request: CreateBoundaryRequest): Promise<CreateBoundaryResponse> {
-        return this.writeBoundaryDefinition('createBoundary', 'create boundary', request);
-    }
-
-    /** Emit an import event for an existing physical boundary. */
-    async importBoundary(request: ImportBoundaryRequest): Promise<ImportBoundaryResponse> {
-        return this.writeBoundaryDefinition('importBoundary', 'import boundary', request);
+        return this.writeBoundaryDefinition(request);
     }
 
     /** List the current event-rebuilt boundary catalog. */
@@ -861,10 +842,9 @@ export class AdminClient {
     }
 
     private async writeBoundaryDefinition(
-        method: 'createBoundary' | 'importBoundary',
-        operation: string,
-        request: CreateBoundaryRequest | ImportBoundaryRequest
-    ): Promise<CreateBoundaryResponse | ImportBoundaryResponse> {
+        request: CreateBoundaryRequest
+    ): Promise<CreateBoundaryResponse> {
+        const operation = 'create boundary';
         if (this.disposed) {
             throw new Error('Client has been disposed');
         }
@@ -881,12 +861,13 @@ export class AdminClient {
             placement: {
                 backend: request.placement.backend,
                 namespace: request.placement.namespace
-            }
+            },
+            existed_before_catalog: request.existedBeforeCatalog || false
         };
         try {
             const metadata = this.createAuthMetadata(operation);
             const response = await new Promise<any>((resolve, reject) => {
-                const call = this.client[method](grpcRequest, metadata, (error: any, value: any) => {
+                const call = this.client.createBoundary(grpcRequest, metadata, (error: any, value: any) => {
                     if (error) {
                         reject(error);
                         return;

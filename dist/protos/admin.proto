@@ -109,18 +109,12 @@ enum BoundaryLifecycleStatus {
   BOUNDARY_LIFECYCLE_STATUS_FAILED = 3;
 }
 
-enum BoundaryRegistrationOrigin {
-  BOUNDARY_REGISTRATION_ORIGIN_UNSPECIFIED = 0;
-  BOUNDARY_REGISTRATION_ORIGIN_CREATED = 1;
-  BOUNDARY_REGISTRATION_ORIGIN_IMPORTED = 2;
-}
-
 message BoundaryInfo {
   string name = 1;
   string description = 2;
   BoundaryPlacementInput placement = 3;
   BoundaryLifecycleStatus status = 4;
-  BoundaryRegistrationOrigin origin = 5;
+  bool existed_before_catalog = 5;
   string last_error = 6;
   Position definition_position = 7;
   Position status_position = 8;
@@ -130,21 +124,11 @@ message CreateBoundaryRequest {
   string name = 1;
   string description = 2;
   BoundaryPlacementInput placement = 3;
+  // Set when adopting physical storage that predates the catalog definition.
+  bool existed_before_catalog = 4;
 }
 
 message CreateBoundaryResponse {
-  BoundaryInfo boundary = 1;
-}
-
-// ImportBoundary registers a physical boundary that already exists. The
-// normal provisioning handler validates/applies its migrations idempotently.
-message ImportBoundaryRequest {
-  string name = 1;
-  string description = 2;
-  BoundaryPlacementInput placement = 3;
-}
-
-message ImportBoundaryResponse {
   BoundaryInfo boundary = 1;
 }
 
@@ -166,7 +150,6 @@ message GetBoundaryResponse {
 service Admin {
   // Boundary Management
   rpc CreateBoundary(CreateBoundaryRequest) returns (CreateBoundaryResponse);
-  rpc ImportBoundary(ImportBoundaryRequest) returns (ImportBoundaryResponse);
   rpc ListBoundaries(ListBoundariesRequest) returns (ListBoundariesResponse);
   rpc GetBoundary(GetBoundaryRequest) returns (GetBoundaryResponse);
 
